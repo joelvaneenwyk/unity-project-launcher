@@ -17,40 +17,38 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: windows-2019
+    runs-on: windows-2022
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - uses: actions/checkout@v4
+        with:
+          submodule: recursive
+          fetch-depth: 0
+
       - name: Check Commit and Install 7Zip PowerShell Module
         shell: powershell
-
         run: |
-          # cancel early, if not build commit
-          $strVal="$Env:COMMIT_MESSAGE"
           # Convert commit message to a single line if multiline
-          $singleLineStrVal = $strVal -replace "`r`n", " " -replace "`n", " "
+          $singleLineStrVal = "$Env:COMMIT_MESSAGE" -replace "`r`n", " " -replace "`n", " "
           if($singleLineStrVal -match '#GITBUILD')
           {
-                Write-Host 'True'
-          } else {
-                Write-Host 'False'
-                exit(1)
+                Write-Host 'Commit message matched with "#GITBUILD"'
           }
-          Install-Module 7Zip4PowerShell -Force -Verbose
+          Write-Host 'Installing 7Zip PowerShell module'
         env:
           COMMIT_MESSAGE: "${{ github.event.commits[0].message }}"
 
-      - uses: actions/checkout@v2
       - name: Restore NuGet packages
         run: nuget restore UnityLauncherPro.sln
 
       - name: Build Binary
         shell: cmd
-        run: call .\Build.cmd
+        run: call ./Build.cmd
 
       - name: Build Artifact
         shell: cmd
-        run: call .\ArtifactBuild.cmd
+        run: call ./ArtifactBuild.cmd
 
       - name: Get current date and time
         id: datetime

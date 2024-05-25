@@ -17,65 +17,47 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: windows-2019
+    runs-on: windows-2022
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Check Commit and Install 7Zip PowerShell Module
-        shell: powershell
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-        run: |
-          # cancel early, if not build commit
-          $strVal="$Env:COMMIT_MESSAGE"
-          # Convert commit message to a single line if multiline
-          $singleLineStrVal = $strVal -replace "`r`n", " " -replace "`n", " "
-          if($singleLineStrVal -match '#GITBUILD')
-          {
-                Write-Host 'True'
-          } else {
-                Write-Host 'False'
-                exit(1)
-          }
-          Install-Module 7Zip4PowerShell -Force -Verbose
-        env:
-          COMMIT_MESSAGE: "${{ github.event.commits[0].message }}"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.x"
 
-      - uses: actions/checkout@v2
       - name: Restore NuGet packages
-        run: nuget restore UnityLauncherPro.sln
+        run: dotnet restore
 
       - name: Build Binary
         shell: cmd
-        run: call .\Build.cmd
+        run: dotnet build
 
-      - name: Build Artifact
-        shell: cmd
-        run: call .\ArtifactBuild.cmd
+      - name: Create Archive
+        shell: powershell
+        run: ./CreateArchive.ps1
+        env:
+          COMMIT_MESSAGE: "${{ github.event.commits[0].message }}"
 
       - name: Get current date and time
         id: datetime
-        run: echo "::set-output name=current_datetime::$(date +'%d/%m/%Y %H:%M')"
+        run: echo "CURRENT_DATETIME=$(date +'%d/%m/%Y %H:%M')" >> "$GITHUB_ENV"
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{github.run_number}}
-          release_name: ${{ steps.datetime.outputs.current_datetime }} (${{ github.run_number }})
+          release_name: ${{ steps.datetime.outputs.CURRENT_DATETIME }} (${{ github.run_number }})
           body: |
             Automated Release by GitHub Action CI
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./UnityLauncherPro.zip
-          asset_name: UnityLauncherPro.zip
-          asset_content_type: application/zip
+          files: .build/UnityLauncherPro.zip

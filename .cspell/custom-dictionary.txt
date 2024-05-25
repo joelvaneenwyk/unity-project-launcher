@@ -1,0 +1,16 @@
+# Custom Dictionary Words
+couldnt
+csprojsplit
+didnt
+doesnt
+HKEY
+netsh
+nographics
+projecs
+projname
+samsungtv
+shouldnt
+tizen
+unitys
+webgl
+wsaplayer

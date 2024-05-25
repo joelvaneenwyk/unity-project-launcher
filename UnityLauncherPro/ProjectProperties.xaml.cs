@@ -13,7 +13,7 @@ namespace UnityLauncherPro
     /// </summary>
     public partial class ProjectProperties : Window
     {
-        Project proj;
+        private Project proj;
 
         public ProjectProperties(Project proj)
         {

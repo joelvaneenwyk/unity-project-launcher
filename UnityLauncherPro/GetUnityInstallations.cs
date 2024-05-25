@@ -9,7 +9,7 @@ namespace UnityLauncherPro
     /// </summary>
     public static class GetUnityInstallations
     {
-        static Dictionary<string, string> platformNames = new Dictionary<string, string> { { "androidplayer", "Android" }, { "windowsstandalonesupport", "Win" }, { "linuxstandalonesupport", "Linux" }, { "LinuxStandalone", "Linux" }, { "OSXStandalone", "OSX" }, { "webglsupport", "WebGL" }, { "metrosupport", "UWP" }, { "iossupport", "iOS" } };
+        private static Dictionary<string, string> platformNames = new Dictionary<string, string> { { "androidplayer", "Android" }, { "windowsstandalonesupport", "Win" }, { "linuxstandalonesupport", "Linux" }, { "LinuxStandalone", "Linux" }, { "OSXStandalone", "OSX" }, { "webglsupport", "WebGL" }, { "metrosupport", "UWP" }, { "iossupport", "iOS" } };
 
 
         // returns unity installations
@@ -129,7 +129,7 @@ namespace UnityLauncherPro
         }
 
         // scans unity installation folder for installed platforms
-        static string[] GetPlatforms(string dataFolder)
+        private static string[] GetPlatforms(string dataFolder)
         {
             // get all folders inside
             var platformFolder = Path.Combine(dataFolder, "PlaybackEngines");
@@ -161,7 +161,7 @@ namespace UnityLauncherPro
             return directories.ToArray();
         }
 
-        static int GetProjectCountForUnityVersion(string version)
+        private static int GetProjectCountForUnityVersion(string version)
         {
             if (MainWindow.projectsSource == null) return 0;
             //Console.WriteLine("xxx "+(MainWindow.projectsSource==null));

@@ -39,44 +39,45 @@ namespace UnityLauncherPro
         public static int projectNameSetting = 0; // 0 = folder or ProjectName.txt if exists, 1=ProductName
         public static readonly string initScriptFileFullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts", "InitializeProject.cs");
 
-        const string contextRegRoot = "Software\\Classes\\Directory\\Background\\shell";
-        const string githubURL = "https://github.com/unitycoder/UnityLauncherPro";
-        const string resourcesURL = "https://github.com/unitycoder/UnityResources";
-        const string defaultAdbLogCatArgs = "-s Unity ActivityManager PackageManager dalvikvm DEBUG -v color";
-        System.Windows.Forms.NotifyIcon notifyIcon;
+        private const string contextRegRoot = "Software\\Classes\\Directory\\Background\\shell";
+        private const string githubURL = "https://github.com/unitycoder/UnityLauncherPro";
+        private const string resourcesURL = "https://github.com/unitycoder/UnityResources";
+        private const string defaultAdbLogCatArgs = "-s Unity ActivityManager PackageManager dalvikvm DEBUG -v color";
+        private System.Windows.Forms.NotifyIcon notifyIcon;
 
-        Updates[] updatesSource;
+        private Updates[] updatesSource;
         public static List<string> updatesAsStrings;
 
-        string _filterString = null;
-        bool multiWordSearch = false;
-        string[] searchWords;
+        private string _filterString = null;
+        private bool multiWordSearch = false;
+        private string[] searchWords;
 
-        int lastSelectedProjectIndex = 0;
-        Mutex myMutex;
-        ThemeEditor themeEditorWindow;
+        private int lastSelectedProjectIndex = 0;
+        private Mutex myMutex;
+        private ThemeEditor themeEditorWindow;
         internal static int webglPort = 50000;
         internal static int maxProjectCount = 40;
 
-        string defaultDateFormat = "dd/MM/yyyy HH:mm:ss";
-        string adbLogCatArgs = defaultAdbLogCatArgs;
+        private string defaultDateFormat = "dd/MM/yyyy HH:mm:ss";
+        private string adbLogCatArgs = defaultAdbLogCatArgs;
 
-        Dictionary<string, SolidColorBrush> origResourceColors = new Dictionary<string, SolidColorBrush>();
+        private Dictionary<string, SolidColorBrush> origResourceColors = new Dictionary<string, SolidColorBrush>();
 
-        string currentBuildReportProjectPath = null;
-        string currentBuildPluginsRelativePath = null;
+        private string currentBuildReportProjectPath = null;
+
+        private string currentBuildPluginsRelativePath = null;
         //List<List<string>> buildReports = new List<List<string>>();
-        List<BuildReport> buildReports = new List<BuildReport>(); // multiple reports, each contains their own stats and items
-        int currentBuildReport = 0;
+        private List<BuildReport> buildReports = new List<BuildReport>(); // multiple reports, each contains their own stats and items
+        private int currentBuildReport = 0;
 
         [DllImport("user32", CharSet = CharSet.Unicode)]
-        static extern IntPtr FindWindow(string cls, string win);
+        private static extern IntPtr FindWindow(string cls, string win);
         [DllImport("user32")]
-        static extern IntPtr SetForegroundWindow(IntPtr hWnd);
+        private static extern IntPtr SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32")]
-        static extern bool IsIconic(IntPtr hWnd);
+        private static extern bool IsIconic(IntPtr hWnd);
         [DllImport("user32")]
-        static extern bool OpenIcon(IntPtr hWnd);
+        private static extern bool OpenIcon(IntPtr hWnd);
 
         public MainWindow()
         {
@@ -84,7 +85,7 @@ namespace UnityLauncherPro
             Init();
         }
 
-        void Init()
+        private void Init()
         {
             // disable accesskeys without alt
             CoreCompatibilityPreferences.IsAltKeyRequiredInAccessKeyDefaultScope = true;
@@ -107,7 +108,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void Start()
+        private void Start()
         {
             // get unity installations
             dataGridUnitys.Items.Clear();
@@ -188,7 +189,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void HandleCommandLineLaunch()
+        private void HandleCommandLineLaunch()
         {
             // check if received -projectPath argument (that means opening from explorer / cmdline)
             string[] args = Environment.GetCommandLineArgs();
@@ -260,7 +261,7 @@ namespace UnityLauncherPro
         }
 
         // main search
-        void FilterRecentProjects()
+        private void FilterRecentProjects()
         {
             // https://www.wpftutorial.net/DataViews.html
             _filterString = txtSearchBox.Text;
@@ -285,7 +286,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void FilterUpdates()
+        private void FilterUpdates()
         {
             _filterString = txtSearchBoxUpdates.Text;
             ICollectionView collection = CollectionViewSource.GetDefaultView(dataGridUpdates.ItemsSource);
@@ -296,7 +297,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void FilterUnitys()
+        private void FilterUnitys()
         {
             _filterString = txtSearchBoxUnity.Text.Trim();
             ICollectionView collection = CollectionViewSource.GetDefaultView(dataGridUnitys.ItemsSource);
@@ -307,7 +308,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void FilterBuildReport()
+        private void FilterBuildReport()
         {
             _filterString = txtSearchBoxBuildReport.Text;
             ICollectionView collection = CollectionViewSource.GetDefaultView(gridBuildReport.ItemsSource);
@@ -388,7 +389,7 @@ namespace UnityLauncherPro
             return (reportItem.Path.IndexOf(_filterString, 0, StringComparison.CurrentCultureIgnoreCase) != -1);
         }
 
-        void LoadSettings()
+        private void LoadSettings()
         {
             // catch corrupted config file
             try
@@ -676,7 +677,7 @@ namespace UnityLauncherPro
             File.Copy(FullFileName, FullFileName + ".bak", true);
         }
 
-        void UpdateUnityInstallationsList()
+        private void UpdateUnityInstallationsList()
         {
             // Reset preferred string, if user changed it
             //preferredVersion = "none";
@@ -700,27 +701,27 @@ namespace UnityLauncherPro
             lblFoundXInstallations.Content = "Found " + unityInstallationsSource.Count + " installations";
         }
 
-        Project GetSelectedProject()
+        private Project GetSelectedProject()
         {
             return (Project)gridRecent.SelectedItem;
         }
 
-        UnityInstallation GetSelectedUnity()
+        private UnityInstallation GetSelectedUnity()
         {
             return (UnityInstallation)dataGridUnitys.SelectedItem;
         }
 
-        Updates GetSelectedUpdate()
+        private Updates GetSelectedUpdate()
         {
             return (Updates)dataGridUpdates.SelectedItem;
         }
 
-        BuildReportItem GetSelectedBuildItem()
+        private BuildReportItem GetSelectedBuildItem()
         {
             return (BuildReportItem)gridBuildReport.SelectedItem;
         }
 
-        void AddUnityInstallationRootFolder()
+        private void AddUnityInstallationRootFolder()
         {
             var dialog = new System.Windows.Forms.FolderBrowserDialog();
             dialog.Description = "Select Unity installations root folder";
@@ -738,7 +739,7 @@ namespace UnityLauncherPro
         }
 
         // waits for unity update results and assigns to datagrid
-        async Task CallGetUnityUpdates()
+        private async Task CallGetUnityUpdates()
         {
             dataGridUpdates.ItemsSource = null;
             var task = GetUnityUpdates.Scan();
@@ -750,7 +751,7 @@ namespace UnityLauncherPro
             dataGridUpdates.ItemsSource = updatesSource;
         }
 
-        async void GoLookForUpdatesForThisUnity()
+        private async void GoLookForUpdatesForThisUnity()
         {
             // call for updates list fetch
             await CallGetUnityUpdates();
@@ -803,7 +804,7 @@ namespace UnityLauncherPro
         //
 
         // maximize window
-        void NotifyIcon_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void NotifyIcon_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
         {
             this.Show();
             this.WindowState = WindowState.Normal;
@@ -842,7 +843,7 @@ namespace UnityLauncherPro
             }
         }
 
-        Project GetNewProjectData(string folder)
+        private Project GetNewProjectData(string folder)
         {
             var p = new Project();
             p.Path = folder;
@@ -854,7 +855,7 @@ namespace UnityLauncherPro
             return p;
         }
 
-        void AddNewProjectToList(Project proj)
+        private void AddNewProjectToList(Project proj)
         {
             projectsSource.Insert(0, proj);
             gridRecent.SelectedIndex = 0;
@@ -1163,7 +1164,7 @@ namespace UnityLauncherPro
             Tools.SetFocusToGrid(gridRecent);
         }
 
-        void RefreshSorting()
+        private void RefreshSorting()
         {
             // use saved sort columns
             if (string.IsNullOrEmpty(Settings.Default.currentSortColumn) == false)
@@ -1335,7 +1336,7 @@ namespace UnityLauncherPro
             }
         }
 
-        bool IsEditingCell(DataGrid targetGrid)
+        private bool IsEditingCell(DataGrid targetGrid)
         {
             IEditableCollectionView itemsView = targetGrid.Items;
             var res = itemsView.IsAddingNew || itemsView.IsEditingItem;
@@ -1894,7 +1895,7 @@ namespace UnityLauncherPro
             CreateNewEmptyProject();
         }
 
-        void CreateNewEmptyProject(string targetFolder = null)
+        private void CreateNewEmptyProject(string targetFolder = null)
         {
             string rootFolder = txtRootFolderForNewProjects.Text;
 
@@ -1996,7 +1997,7 @@ namespace UnityLauncherPro
             Settings.Default.Save();
         }
 
-        bool isInitializing = true; // used to avoid doing things while still starting up
+        private bool isInitializing = true; // used to avoid doing things while still starting up
         private void ChkStreamerMode_Checked(object sender, RoutedEventArgs e)
         {
             var isChecked = (bool)((CheckBox)sender).IsChecked;
@@ -2077,7 +2078,7 @@ namespace UnityLauncherPro
             e.CanExecute = true;
         }
 
-        bool isDirtyCell = false;
+        private bool isDirtyCell = false;
         private void GridRecent_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
         {
             isDirtyCell = true;
@@ -2114,7 +2115,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void KillSelectedProcess(object sender, ExecutedRoutedEventArgs e)
+        private void KillSelectedProcess(object sender, ExecutedRoutedEventArgs e)
         {
             var proj = GetSelectedProject();
             var proc = ProcessHandler.Get(proj.Path);
@@ -2154,7 +2155,7 @@ namespace UnityLauncherPro
             RefreshBuildReports();
         }
 
-        void RefreshBuildReports()
+        private void RefreshBuildReports()
         {
             currentBuildReport = 0;
             // delete all reports
@@ -2453,7 +2454,7 @@ namespace UnityLauncherPro
             DisplayBuildReport(++currentBuildReport);
         }
 
-        void DisplayBuildReport(int index)
+        private void DisplayBuildReport(int index)
         {
             if (currentBuildReport < 0)
             {
@@ -2480,7 +2481,7 @@ namespace UnityLauncherPro
             UpdateBuildReportLabelAndButtons();
         }
 
-        void UpdateBuildReportLabelAndButtons()
+        private void UpdateBuildReportLabelAndButtons()
         {
             btnPrevBuildReport.IsEnabled = currentBuildReport > 0;
             btnNextBuildReport.IsEnabled = currentBuildReport < buildReports.Count - 1;
@@ -2537,7 +2538,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void ApplyTheme(string themeFile)
+        private void ApplyTheme(string themeFile)
         {
             if (chkUseCustomTheme.IsChecked == false) return;
 
@@ -2582,7 +2583,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void ResetTheme()
+        private void ResetTheme()
         {
             foreach (KeyValuePair<string, SolidColorBrush> item in origResourceColors)
             {
@@ -2716,7 +2717,7 @@ namespace UnityLauncherPro
             ValidateCustomDateFormat(textBox.Text);
         }
 
-        void ValidateCustomDateFormat(string format)
+        private void ValidateCustomDateFormat(string format)
         {
             if (Tools.ValidateDateFormat(format))
             {
@@ -2733,7 +2734,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void ValidateFolderFromTextbox(TextBox textBox)
+        private void ValidateFolderFromTextbox(TextBox textBox)
         {
             //Console.WriteLine(textBox.Text);
             if (Directory.Exists(textBox.Text) == true)
@@ -2749,7 +2750,7 @@ namespace UnityLauncherPro
             }
         }
 
-        bool ValidateIntRange(TextBox textBox, int min, int max)
+        private bool ValidateIntRange(TextBox textBox, int min, int max)
         {
             int num = 0;
             if (int.TryParse(textBox.Text, out num))
@@ -2816,7 +2817,7 @@ namespace UnityLauncherPro
             OpenSelectedBuildReportFile();
         }
 
-        void OpenSelectedBuildReportFile()
+        private void OpenSelectedBuildReportFile()
         {
             var item = GetSelectedBuildItem();
 
@@ -3120,7 +3121,7 @@ namespace UnityLauncherPro
         }
 
         // TODO combine similar methods
-        void SortHandlerUpdates(object sender, DataGridSortingEventArgs e)
+        private void SortHandlerUpdates(object sender, DataGridSortingEventArgs e)
         {
             DataGridColumn column = e.Column;
 
@@ -3182,7 +3183,7 @@ namespace UnityLauncherPro
         }
 
         // https://stackoverflow.com/a/2130557/5452781
-        void SortHandlerRecentProjects(object sender, DataGridSortingEventArgs e)
+        private void SortHandlerRecentProjects(object sender, DataGridSortingEventArgs e)
         {
             // TESTing fix for null ref in commandline start
             if (gridRecent.ItemsSource == null) return;

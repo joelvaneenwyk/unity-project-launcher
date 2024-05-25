@@ -184,7 +184,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void Upgrade()
+        private void Upgrade()
         {
             var k = (UnityInstallation)gridAvailableVersions.SelectedItem;
             upgradeVersion = k.Version;

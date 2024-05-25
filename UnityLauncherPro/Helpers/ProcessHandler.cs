@@ -11,7 +11,7 @@ namespace UnityLauncherPro.Helpers
 {
     public static class ProcessHandler
     {
-        static Dictionary<string, Process> processes = new Dictionary<string, Process>();
+        private static Dictionary<string, Process> processes = new Dictionary<string, Process>();
 
         public static void Add(Project proj, Process proc)
         {

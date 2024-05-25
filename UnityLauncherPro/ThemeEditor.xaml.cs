@@ -14,17 +14,17 @@ namespace UnityLauncherPro
 {
     public partial class ThemeEditor : Window
     {
-        static ObservableCollection<ThemeColor> themeColors = new ObservableCollection<ThemeColor>();
-        static ObservableCollection<ThemeColor> themeColorsOrig = new ObservableCollection<ThemeColor>();
+        private static ObservableCollection<ThemeColor> themeColors = new ObservableCollection<ThemeColor>();
+        private static ObservableCollection<ThemeColor> themeColorsOrig = new ObservableCollection<ThemeColor>();
 
-        string previousSaveFileName = null;
+        private string previousSaveFileName = null;
 
         // hack for adjusting slider, without triggering onchange..
-        bool forceValue = false;
+        private bool forceValue = false;
 
         // for single undo
-        Slider previousSlider;
-        int previousValue = -1;
+        private Slider previousSlider;
+        private int previousValue = -1;
 
         public ThemeEditor()
         {
@@ -62,7 +62,7 @@ namespace UnityLauncherPro
             gridThemeColors.SelectedIndex = 0;
         }
 
-        void UpdateColorPreview()
+        private void UpdateColorPreview()
         {
             var newColor = new Color();
             newColor.R = (byte)sliderRed.Value;
@@ -83,7 +83,7 @@ namespace UnityLauncherPro
             forceValue = false;
         }
 
-        void SetSlider(Slider target, double color)
+        private void SetSlider(Slider target, double color)
         {
             forceValue = true;
             target.Value = color;
@@ -236,7 +236,7 @@ namespace UnityLauncherPro
             SetUndoValues(sender, txtAlpha);
         }
 
-        void SetUndoValues(Object sender, TextBox textBox)
+        private void SetUndoValues(Object sender, TextBox textBox)
         {
             previousSlider = (Slider)sender;
             previousValue = (int)previousSlider.Value;
@@ -262,7 +262,7 @@ namespace UnityLauncherPro
             GetColorFromTextBox((TextBox)sender, sliderAlpha);
         }
 
-        void GetColorFromTextBox(TextBox source, Slider target)
+        private void GetColorFromTextBox(TextBox source, Slider target)
         {
             int col = 0;
             if (int.TryParse(source.Text, out col))

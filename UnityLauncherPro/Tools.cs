@@ -19,21 +19,21 @@ namespace UnityLauncherPro
 {
     public static class Tools
     {
-        const int SW_RESTORE = 9;
+        private const int SW_RESTORE = 9;
 
         [DllImport("user32", CharSet = CharSet.Unicode)]
-        static extern IntPtr FindWindow(string cls, string win);
+        private static extern IntPtr FindWindow(string cls, string win);
         [DllImport("user32")]
-        static extern IntPtr SetForegroundWindow(IntPtr hWnd);
+        private static extern IntPtr SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32")]
-        static extern bool IsIconic(IntPtr hWnd);
+        private static extern bool IsIconic(IntPtr hWnd);
         [DllImport("user32")]
-        static extern bool OpenIcon(IntPtr hWnd);
+        private static extern bool OpenIcon(IntPtr hWnd);
         [DllImport("user32")]
         private static extern bool ShowWindow(IntPtr handle, int nCmdShow);
 
         // reference to already running webgl server processes and ports
-        static Dictionary<int, Process> webglServerProcesses = new Dictionary<int, Process>();
+        private static Dictionary<int, Process> webglServerProcesses = new Dictionary<int, Process>();
 
         // returns last modified date for file (or null if cannot get it)
         public static DateTime? GetLastModifiedTime(string path)
@@ -82,17 +82,19 @@ namespace UnityLauncherPro
                             }
                             else
                             {
-                                throw new InvalidDataException("invalid version data:" + data);
+                                throw new InvalidDataException($"invalid version data:{data}");
                             }
                         }
                         else
                         {
-                            Console.WriteLine("Cannot find m_EditorVersion in '" + versionPath + "'.\n\nFile Content:\n" + string.Join("\n", data).ToString());
+                            Console.WriteLine(
+                                $"Cannot find m_EditorVersion in '{versionPath}'.\n\nFile Content:\n{string.Join("\n", data)}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Invalid projectversion data found in '" + versionPath + "'.\n\nFile Content:\n" + string.Join("\n", data).ToString());
+                        Console.WriteLine(
+                            $"Invalid projectversion data found in '{versionPath}'.\n\nFile Content:\n{string.Join("\n", data)}");
                     }
                 }
                 else // maybe its 4.x?
@@ -159,7 +161,7 @@ namespace UnityLauncherPro
                             }
                             else
                             {
-                                throw new InvalidDataException("invalid productName data:" + data);
+                                throw new InvalidDataException($"invalid productName data:{data}");
                             }
                         }
                     }
@@ -218,7 +220,7 @@ namespace UnityLauncherPro
         {
             if (proj == null) return null;
 
-            Console.WriteLine("Launching project " + proj?.Title + " at " + proj?.Path);
+            Console.WriteLine($"Launching project {proj?.Title} at {proj?.Path}");
 
             if (Directory.Exists(proj.Path) == false) return null;
 
@@ -260,7 +262,7 @@ namespace UnityLauncherPro
                 var version = GetProjectVersion(proj.Path);
                 if (string.IsNullOrEmpty(version) == false && version != proj.Version)
                 {
-                    Console.WriteLine("Project version has changed from " + proj.Version + " to " + version);
+                    Console.WriteLine($"Project version has changed from {proj.Version} to {version}");
                     proj.Version = version;
                 }
             }
@@ -276,21 +278,21 @@ namespace UnityLauncherPro
             Process newProcess = new Process();
             try
             {
-                var cmd = "\"" + unityExePath + "\"";
+                var cmd = $"\"{unityExePath}\"";
                 newProcess.StartInfo.FileName = cmd;
 
-                var unitycommandlineparameters = " -projectPath " + "\"" + proj.Path + "\"";
+                var unitycommandlineparameters = $" -projectPath \"{proj.Path}\"";
 
                 string customArguments = proj.Arguments;
                 if (string.IsNullOrEmpty(customArguments) == false)
                 {
-                    unitycommandlineparameters += " " + customArguments;
+                    unitycommandlineparameters += $" {customArguments}";
                 }
 
                 string projTargetPlatform = proj.TargetPlatform;
                 if (string.IsNullOrEmpty(projTargetPlatform) == false)
                 {
-                    unitycommandlineparameters += " -buildTarget " + projTargetPlatform;
+                    unitycommandlineparameters += $" -buildTarget {projTargetPlatform}";
                 }
 
                 if (useInitScript == true)
@@ -298,7 +300,7 @@ namespace UnityLauncherPro
                     unitycommandlineparameters += " -executeMethod UnityLauncherProTools.InitializeProject.Init";
                 }
 
-                Console.WriteLine("Start process: " + cmd + " " + unitycommandlineparameters);
+                Console.WriteLine($"Start process: {cmd} {unitycommandlineparameters}");
 
                 // TODO load custom settings per project
                 //string userSettingsFolder = Path.Combine(proj.Path, "UserSettings");
@@ -383,7 +385,7 @@ namespace UnityLauncherPro
             return newProcess;
         }
 
-        static bool CheckCrashBackupScene(string projectPath)
+        private static bool CheckCrashBackupScene(string projectPath)
         {
             var cancelRunningUnity = false;
             var recoveryFile = Path.Combine(projectPath, "Temp", "__Backupscenes", "0.backup");
@@ -400,13 +402,13 @@ namespace UnityLauncherPro
                     if (Directory.Exists(restoreFolder) == true)
                     {
                         Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                        var uniqueFileName = "Recovered_Scene" + unixTimestamp + ".unity";
+                        var uniqueFileName = $"Recovered_Scene{unixTimestamp}.unity";
                         File.Copy(recoveryFile, Path.Combine(restoreFolder, uniqueFileName));
-                        Console.WriteLine("Recovered crashed scene into: " + restoreFolder);
+                        Console.WriteLine($"Recovered crashed scene into: {restoreFolder}");
                     }
                     else
                     {
-                        Console.WriteLine("Error: Failed to create restore folder: " + restoreFolder);
+                        Console.WriteLine($"Error: Failed to create restore folder: {restoreFolder}");
                         cancelRunningUnity = true;
                     }
                 }
@@ -442,7 +444,7 @@ namespace UnityLauncherPro
                     {
                         if (Directory.Exists(folder.Substring(0, i)))
                         {
-                            Process.Start(folder.Substring(0, i) + "/");
+                            Process.Start($"{folder.Substring(0, i)}/");
                             break;
                         }
                     }
@@ -468,7 +470,7 @@ namespace UnityLauncherPro
                     {
                         if (Directory.Exists(fileName.Substring(0, i)))
                         {
-                            Process.Start(fileName.Substring(0, i) + "/");
+                            Process.Start($"{fileName.Substring(0, i)}/");
                             break;
                         }
                     }
@@ -480,25 +482,23 @@ namespace UnityLauncherPro
         // run any exe, return process
         public static Process LaunchExe(string path, string param = null)
         {
-            if (string.IsNullOrEmpty(path)) return null;
+            Process newProcess = null;
 
-            // not needed for exe's in PATH
-            //if (File.Exists(path) == true)
+            if (!string.IsNullOrEmpty(path));
             {
-                Process newProcess = null;
-                if (string.IsNullOrEmpty(param) == true)
+                if (string.IsNullOrEmpty(param))
                 {
-                    Console.WriteLine("LaunchExe= " + path);
+                    Console.WriteLine($"LaunchExe= {path}");
                     newProcess = Process.Start(path);
                 }
                 else
                 {
-                    Console.WriteLine("LaunchExe= " + path + " param=" + param);
+                    Console.WriteLine($"LaunchExe= {path} param={param}");
 
                     try
                     {
                         newProcess = new Process();
-                        newProcess.StartInfo.FileName = "\"" + path + "\"";
+                        newProcess.StartInfo.FileName = $"\"{path}\"";
                         newProcess.StartInfo.Arguments = param;
                         newProcess.EnableRaisingEvents = true; // needed to get Exited event
                         newProcess.Start();
@@ -508,10 +508,9 @@ namespace UnityLauncherPro
                         Console.WriteLine(e);
                     }
                 }
-                return newProcess;
             }
-            Console.WriteLine("Failed to run exe: " + path + " " + param);
-            return null;
+            Console.WriteLine($@"Failed to run exe: {path} {param}");
+            return newProcess;
         }
 
 
@@ -539,22 +538,22 @@ namespace UnityLauncherPro
                 var year = int.Parse(version.Split('.')[0]);
                 if (year >= 2019) padding = "";
 
-                url = "https://unity3d.com/unity/" + whatsnew + "/" + padding + version;
+                url = $"https://unity3d.com/unity/{whatsnew}/{padding}{version}";
             }
             else
             if (VersionIsPatch(version) == true)
             {
-                url = "https://unity3d.com/unity/qa/patch-releases/" + version;
+                url = $"https://unity3d.com/unity/qa/patch-releases/{version}";
             }
             else
             if (VersionIsBeta(version) == true)
             {
-                url = "https://unity3d.com/unity/beta/" + version;
+                url = $"https://unity3d.com/unity/beta/{version}";
             }
             else
             if (VersionIsAlpha(version) == true)
             {
-                url = "https://unity3d.com/unity/alpha/" + version;
+                url = $"https://unity3d.com/unity/alpha/{version}";
             }
             return url;
         }
@@ -603,7 +602,8 @@ namespace UnityLauncherPro
                 var getNextVersionToClosest = closestVersion == null ? null : Tools.FindNearestVersion(version, MainWindow.updatesAsStrings);
                 if (getNextVersionToClosest == null) getNextVersionToClosest = version;
 
-                url = "https://alpha.release-notes.ds.unity3d.com/search?fromVersion=" + getNextVersionToClosest + "&toVersion=" + version;
+                url =
+                    $"https://alpha.release-notes.ds.unity3d.com/search?fromVersion={getNextVersionToClosest}&toVersion={version}";
             }
             else
             {
@@ -636,7 +636,7 @@ namespace UnityLauncherPro
             {
                 //SetStatus("Error> Cannot find installer executable ... opening website instead");
                 url = "https://unity3d.com/get-unity/download/archive";
-                Process.Start(url + "#installer-not-found---version-" + version);
+                Process.Start($"{url}#installer-not-found---version-{version}");
             }
         }
 
@@ -644,13 +644,13 @@ namespace UnityLauncherPro
         {
             string exeURL = ParseDownloadURLFromWebpage(version);
 
-            Console.WriteLine("download exeURL= (" + exeURL + ")");
+            Console.WriteLine($"download exeURL= ({exeURL})");
 
             if (string.IsNullOrEmpty(exeURL) == false && exeURL.StartsWith("https") == true)
             {
                 //SetStatus("Download installer in browser: " + exeURL);
                 // download url file to temp
-                string tempFile = Path.GetTempPath() + "UnityDownloadAssistant-" + version.Replace(".", "_") + ".exe";
+                string tempFile = $"{Path.GetTempPath()}UnityDownloadAssistant-{version.Replace(".", "_")}.exe";
                 //Console.WriteLine("download tempFile= (" + tempFile + ")");
                 if (File.Exists(tempFile) == true) File.Delete(tempFile);
 
@@ -662,8 +662,8 @@ namespace UnityLauncherPro
                     string lastRootFolder = Properties.Settings.Default.rootFolders[Properties.Settings.Default.rootFolders.Count - 1];
                     // check if ends with / or \
                     if (lastRootFolder.EndsWith("/") == false && lastRootFolder.EndsWith("\\") == false) lastRootFolder += "/";
-                    string outputVersionFolder = version.Split('.')[0] + "_" + version.Split('.')[1];
-                    string targetPathArgs = " /D=" + lastRootFolder + outputVersionFolder; ;
+                    string outputVersionFolder = $"{version.Split('.')[0]}_{version.Split('.')[1]}";
+                    string targetPathArgs = $" /D={lastRootFolder}{outputVersionFolder}"; ;
 
                     // if user clicks NO to UAC, this fails (so added try-catch)
                     try
@@ -677,7 +677,7 @@ namespace UnityLauncherPro
                     }
                     catch (Exception)
                     {
-                        Console.WriteLine("Failed to run exe: " + tempFile);
+                        Console.WriteLine($"Failed to run exe: {tempFile}");
                         DeleteTempFile(tempFile);
                     }
                     // TODO refresh upgrade dialog after installer finished
@@ -687,11 +687,11 @@ namespace UnityLauncherPro
             {
                 //SetStatus("Error> Cannot find installer executable ... opening website instead");
                 url = "https://unity3d.com/get-unity/download/archive";
-                Process.Start(url + "#installer-not-found---version-" + version);
+                Process.Start($"{url}#installer-not-found---version-{version}");
             }
         }
 
-        static readonly string initFileDefaultURL = "https://raw.githubusercontent.com/unitycoder/UnityInitializeProject/main/Assets/Editor/InitializeProject.cs";
+        private static readonly string initFileDefaultURL = "https://raw.githubusercontent.com/unitycoder/UnityInitializeProject/main/Assets/Editor/InitializeProject.cs";
 
         public static void DownloadInitScript(string currentInitScriptFullPath, string currentInitScriptLocationOrURL)
         {
@@ -733,7 +733,8 @@ namespace UnityLauncherPro
                         // move old file as backup
                         if (File.Exists(currentInitScriptFullPath))
                         {
-                            string oldScriptFullPath = Path.Combine(currentInitScriptFolder, currentInitScriptFile + ".bak");
+                            string oldScriptFullPath = Path.Combine(currentInitScriptFolder,
+                                $"{currentInitScriptFile}.bak");
                             if (File.Exists(oldScriptFullPath)) File.Delete(oldScriptFullPath);
                             File.Move(currentInitScriptFullPath, oldScriptFullPath);
                         }
@@ -757,25 +758,25 @@ namespace UnityLauncherPro
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("File exception: " + e.Message);
+                    Console.WriteLine($"File exception: {e.Message}");
                 }
             }
             else
             {
-                Console.WriteLine("Failed to download init script from: " + currentInitScriptLocationOrURL);
+                Console.WriteLine($"Failed to download init script from: {currentInitScriptLocationOrURL}");
             }
         }
 
-        static void DeleteTempFile(string path)
+        private static void DeleteTempFile(string path)
         {
             if (File.Exists(path) == true)
             {
-                Console.WriteLine("DeleteTempFile: " + path);
+                Console.WriteLine($"DeleteTempFile: {path}");
                 File.Delete(path);
             }
         }
 
-        static bool DownloadFile(string url, string tempFile)
+        private static bool DownloadFile(string url, string tempFile)
         {
             bool result = false;
             try
@@ -789,7 +790,7 @@ namespace UnityLauncherPro
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error> DownloadFile: " + e);
+                Console.WriteLine($"Error> DownloadFile: {e}");
             }
             return result;
         }
@@ -806,7 +807,7 @@ namespace UnityLauncherPro
                 }
                 catch (WebException e)
                 {
-                    Console.WriteLine("DownloadHTML: " + e.Message);
+                    Console.WriteLine($"DownloadHTML: {e.Message}");
                     return null;
                 }
             }
@@ -826,8 +827,8 @@ namespace UnityLauncherPro
                 // get correct page url
                 url = "https://unity3d.com/get-unity/download/archive";
                 if (VersionIsPatch(version)) url = "https://unity3d.com/unity/qa/patch-releases";
-                if (VersionIsBeta(version)) url = "https://unity.com/releases/editor/beta/" + version;
-                if (VersionIsAlpha(version)) url = "https://unity.com/releases/editor/alpha/" + version;
+                if (VersionIsBeta(version)) url = $"https://unity.com/releases/editor/beta/{version}";
+                if (VersionIsAlpha(version)) url = $"https://unity.com/releases/editor/alpha/{version}";
                 // fix unity server problem, some pages says 404 found if no url params
                 url += "?unitylauncherpro";
             }
@@ -845,7 +846,7 @@ namespace UnityLauncherPro
                 //Console.WriteLine("got "+version);
                 if (string.IsNullOrEmpty(version))
                 {
-                    SetStatus("Failed to get version (" + version + ") number from hash: " + hash);
+                    SetStatus($"Failed to get version ({version}) number from hash: {hash}");
                     return null;
                 }
             }
@@ -859,7 +860,7 @@ namespace UnityLauncherPro
             {
                 for (int i = 0; i < lines.Length; i++)
                 {
-                    if (lines[i].Contains("UnityDownloadAssistant-" + version + ".exe"))
+                    if (lines[i].Contains($"UnityDownloadAssistant-{version}.exe"))
                     {
                         int start = lines[i].IndexOf('"') + 1;
                         int end = lines[i].IndexOf('"', start);
@@ -874,7 +875,7 @@ namespace UnityLauncherPro
                 for (int i = 0; i < lines.Length; i++)
                 {
                     // find line where full installer is (from archive page)
-                    if (lines[i].Contains("UnitySetup64-" + version))
+                    if (lines[i].Contains($"UnitySetup64-{version}"))
                     {
                         // take full exe installer line, to have changeset hash, then replace with download assistant filepath
                         string line = lines[i];
@@ -946,16 +947,18 @@ namespace UnityLauncherPro
             // download full installer instead
             if (useHash == false && preferFullInstaller)
             {
-                exeURL = exeURL.Replace("UnityDownloadAssistant-" + version + ".exe", "Windows64EditorInstaller/UnitySetup64-" + version + ".exe");
+                exeURL = exeURL.Replace($"UnityDownloadAssistant-{version}.exe",
+                    $"Windows64EditorInstaller/UnitySetup64-{version}.exe");
                 // handle alpha/beta
-                exeURL = exeURL.Replace("UnityDownloadAssistant.exe", "Windows64EditorInstaller/UnitySetup64-" + version + ".exe");
+                exeURL = exeURL.Replace("UnityDownloadAssistant.exe",
+                    $"Windows64EditorInstaller/UnitySetup64-{version}.exe");
             }
 
             // didnt find installer
             if (string.IsNullOrEmpty(exeURL))
             {
                 //SetStatus("Cannot find UnityDownloadAssistant.exe for this version.");
-                Console.WriteLine("Installer not found from URL: " + url);
+                Console.WriteLine($"Installer not found from URL: {url}");
             }
             return exeURL;
         }
@@ -974,7 +977,7 @@ namespace UnityLauncherPro
             {
                 foreach (Match match in matches)
                 {
-                    Console.WriteLine("Extracted number: " + match.Value);
+                    Console.WriteLine($"Extracted number: {match.Value}");
                     return match.Value;
                     break;
                 }
@@ -1096,13 +1099,13 @@ namespace UnityLauncherPro
         }
 
         // NOTE this doesnt modify the 2nd line in ProjectVersion.txt
-        static void SaveProjectVersion(Project proj)
+        private static void SaveProjectVersion(Project proj)
         {
             var settingsPath = Path.Combine(proj.Path, "ProjectSettings", "ProjectVersion.txt");
             if (File.Exists(settingsPath))
             {
                 var versionRows = File.ReadAllLines(settingsPath);
-                versionRows[0] = "m_EditorVersion: " + proj.Version;
+                versionRows[0] = $"m_EditorVersion: {proj.Version}";
                 File.WriteAllLines(settingsPath, versionRows);
             }
         }
@@ -1124,7 +1127,7 @@ namespace UnityLauncherPro
                 if (string.IsNullOrEmpty(upgradeToVersion)) return;
 
                 // get selected version to upgrade for
-                Console.WriteLine("Upgrade to " + upgradeToVersion);
+                Console.WriteLine($"Upgrade to {upgradeToVersion}");
 
                 // inject new version for this item, TODO inject version to ProjectSettings file, so then no alert from unity wrong version dialog
                 proj.Version = upgradeToVersion;
@@ -1159,18 +1162,18 @@ namespace UnityLauncherPro
                 key.CreateSubKey(appName);
 
                 key = key.OpenSubKey(appName, true);
-                key.SetValue("", "Open with " + appName);
-                key.SetValue("Icon", "\"" + Process.GetCurrentProcess().MainModule.FileName + "\"");
+                key.SetValue("", $"Open with {appName}");
+                key.SetValue("Icon", $"\"{Process.GetCurrentProcess().MainModule.FileName}\"");
 
                 key.CreateSubKey("command");
                 key = key.OpenSubKey("command", true);
-                var executeString = "\"" + Process.GetCurrentProcess().MainModule.FileName + "\"";
+                var executeString = $"\"{Process.GetCurrentProcess().MainModule.FileName}\"";
                 executeString += " -projectPath \"%V\"";
                 key.SetValue("", executeString);
             }
             else
             {
-                Console.WriteLine("Error> Cannot find registry key: " + contextRegRoot);
+                Console.WriteLine($"Error> Cannot find registry key: {contextRegRoot}");
             }
         }
 
@@ -1184,7 +1187,7 @@ namespace UnityLauncherPro
             if (key != null)
             {
                 var appName = "UnityLauncherPro";
-                RegistryKey appKey = Registry.CurrentUser.OpenSubKey(contextRegRoot + "\\" + appName, false);
+                RegistryKey appKey = Registry.CurrentUser.OpenSubKey($"{contextRegRoot}\\{appName}", false);
                 if (appKey != null)
                 {
                     key.DeleteSubKeyTree(appName);
@@ -1246,7 +1249,7 @@ namespace UnityLauncherPro
         }
 
         //public static Platform GetTargetPlatform(string projectPath)
-        static string GetTargetPlatformRaw(string projectPath)
+        private static string GetTargetPlatformRaw(string projectPath)
         {
             string results = null;
             //Platform results = Platform.Unknown;
@@ -1296,7 +1299,8 @@ namespace UnityLauncherPro
             }
             else
             {
-                if (string.IsNullOrEmpty(rawPlatformName) == false) Console.WriteLine("Missing buildTarget remap name for: " + rawPlatformName);
+                if (string.IsNullOrEmpty(rawPlatformName) == false) Console.WriteLine(
+                    $"Missing buildTarget remap name for: {rawPlatformName}");
                 return null;
             }
         }
@@ -1372,7 +1376,7 @@ namespace UnityLauncherPro
                 }
                 else
                 {
-                    Console.WriteLine("selected row out of bounds: " + index);
+                    Console.WriteLine($"selected row out of bounds: {index}");
                 }
             }
             // NOTE does this causes move below?
@@ -1423,7 +1427,7 @@ namespace UnityLauncherPro
             // check if base folder exists
             if (Directory.Exists(baseFolder) == false)
             {
-                Console.WriteLine("Missing baseFolder: " + baseFolder);
+                Console.WriteLine($"Missing baseFolder: {baseFolder}");
                 return null;
             }
 
@@ -1497,7 +1501,7 @@ namespace UnityLauncherPro
             unityBaseVersion = unityBaseVersion.Replace(".", "_");
             for (int i = 97; i < 122; i++)
             {
-                var newProject = unityBaseVersion + "_" + ((char)i);
+                var newProject = $"{unityBaseVersion}_{((char)i)}";
                 var path = Path.Combine(baseFolder, newProject);
 
                 if (Directory.Exists(path))
@@ -1510,19 +1514,19 @@ namespace UnityLauncherPro
                 }
             }
             // couldnt find free letter to use, lets add timestamp then
-            return unityBaseVersion + "_" + DateTime.Now.ToString("ddMMyyyy_HHmmss");
+            return $"{unityBaseVersion}_{DateTime.Now:ddMMyyyy_HHmmss}";
         }
 
-        static void CreateEmptyProjectFolder(string path, string version)
+        private static void CreateEmptyProjectFolder(string path, string version)
         {
-            Console.WriteLine("Create new project folder: " + path);
+            Console.WriteLine($"Create new project folder: {path}");
             Directory.CreateDirectory(path);
 
             // create project version file, to avoid wrong version warning
             var settingsPath = Path.Combine(path, "ProjectSettings");
             Directory.CreateDirectory(settingsPath);
             var settingsFile = Path.Combine(settingsPath, "ProjectVersion.txt");
-            File.WriteAllText(settingsFile, "m_EditorVersion: " + version);
+            File.WriteAllText(settingsFile, $"m_EditorVersion: {version}");
         }
 
         public static string GetEditorLogsFolder()
@@ -1550,7 +1554,7 @@ namespace UnityLauncherPro
             RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
             if (state == true)
             {
-                rk.SetValue(MainWindow.appName, "\"" + Process.GetCurrentProcess().MainModule.FileName + "\"");
+                rk.SetValue(MainWindow.appName, $"\"{Process.GetCurrentProcess().MainModule.FileName}\"");
             }
             else
             {
@@ -1682,18 +1686,19 @@ namespace UnityLauncherPro
                     }
                     else
                     {
-                        Console.WriteLine("Unable to parse UNITY_VERSION_HASH from " + changeSetFile);
+                        Console.WriteLine($"Unable to parse UNITY_VERSION_HASH from {changeSetFile}");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Changeset hash file not found: " + changeSetFile);
+                    Console.WriteLine($"Changeset hash file not found: {changeSetFile}");
                 }
             }
 
             if (hash == null) return;
 
-            var moduleURL = "https://download.unity3d.com/download_unity/" + hash + "/TargetSupportInstaller/UnitySetup-" + moduleName + "-Support-for-Editor-" + unityVersion + ".exe";
+            var moduleURL =
+                $"https://download.unity3d.com/download_unity/{hash}/TargetSupportInstaller/UnitySetup-{moduleName}-Support-for-Editor-{unityVersion}.exe";
             OpenURL(moduleURL);
         }
 
@@ -1704,7 +1709,7 @@ namespace UnityLauncherPro
             {
                 if (Tools.LaunchExplorer(logfolder) == false)
                 {
-                    Console.WriteLine("Cannot open folder.." + logfolder);
+                    Console.WriteLine($"Cannot open folder..{logfolder}");
                 }
             }
         }
@@ -1712,8 +1717,8 @@ namespace UnityLauncherPro
         // NOTE android only at the moment
         public static void BuildProject(Project proj, Platform platform)
         {
-            Console.WriteLine("Building " + proj.Title + " for " + platform);
-            SetStatus("Build process started: " + DateTime.Now.ToString("HH:mm:ss"));
+            Console.WriteLine($"Building {proj.Title} for {platform}");
+            SetStatus($"Build process started: {DateTime.Now:HH:mm:ss}");
 
             // TODO use theme colors, keep list of multiple builds, if click status button show list of builds, if click for single build (show output folder)
             SetBuildStatus(Colors.Red);
@@ -1730,9 +1735,9 @@ namespace UnityLauncherPro
             var editorScriptFile = Path.Combine(editorScriptFolder, "UnityLauncherProBuilder.cs");
 
             // check build folder and create if missing
-            var outputFolder = Path.Combine(proj.Path, "Builds/" + platform + "/");
+            var outputFolder = Path.Combine(proj.Path, $"Builds/{platform}/");
             outputFolder = outputFolder.Replace('\\', '/'); // fix backslashes
-            Console.WriteLine("outputFolder= " + outputFolder);
+            Console.WriteLine($"outputFolder= {outputFolder}");
             if (Directory.Exists(outputFolder) == false) Directory.CreateDirectory(outputFolder);
             // TODO check if creation failed
 
@@ -1741,8 +1746,8 @@ namespace UnityLauncherPro
             var outputFile = String.Join("_", proj.Title.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries)).TrimEnd('.');
             // replace spaces also, for old time(r)s
             outputFile = outputFile.Replace(' ', '_');
-            outputFile = Path.Combine(outputFolder, outputFile + ".apk");
-            Console.WriteLine("outputFile= " + outputFile);
+            outputFile = Path.Combine(outputFolder, $"{outputFile}.apk");
+            Console.WriteLine($"outputFile= {outputFile}");
 
             // TODO move to txt resource? and later load from local custom file if exists, and later open window or add settings for build options
             // TODO different unity versions? wont work in older unitys right now
@@ -1783,7 +1788,7 @@ public static class UnityLauncherProTools
             // fill in project specific data
             builderScript = builderScript.Replace("###OUTPUTFILE###", outputFile); // android
             builderScript = builderScript.Replace("###OUTPUTFOLDER###", outputFolder); // ios
-            Console.WriteLine("builderScript=" + builderScript);
+            Console.WriteLine($"builderScript={builderScript}");
 
             File.WriteAllText(editorScriptFile, builderScript);
             // TODO check if write failed
@@ -1796,7 +1801,7 @@ public static class UnityLauncherProTools
             //var buildcmd = $"\"{unityExePath}\" -quit -batchmode -nographics -projectPath \"{proj.Path}\" -executeMethod \"Builder.BuildAndroid\" -buildTarget android -logFile -";
             // TODO test without nographics : https://forum.unity.com/threads/batch-build-one-scene-is-black-works-in-normal-file-build.1282823/#post-9456524
             var buildParams = $" -quit -batchmode -nographics -projectPath \"{proj.Path}\" -executeMethod \"UnityLauncherProTools.Build{platform}\" -buildTarget {platform} -logFile \"{outputFolder}/../build.log\"";
-            Console.WriteLine("buildcmd= " + buildParams);
+            Console.WriteLine($"buildcmd= {buildParams}");
 
             // launch build
             var proc = Tools.LaunchExe(unityExePath, buildParams);
@@ -1804,9 +1809,9 @@ public static class UnityLauncherProTools
             // wait for process exit then open output folder
             proc.Exited += (o, i) =>
             {
-                Console.WriteLine("Build process exited: " + outputFolder);
+                Console.WriteLine($"Build process exited: {outputFolder}");
                 Tools.ExploreFolder(outputFolder);
-                SetStatus("Build process finished: " + DateTime.Now.ToString("HH:mm:ss"));
+                SetStatus($"Build process finished: {DateTime.Now:HH:mm:ss}");
                 // TODO set color based on results
                 SetBuildStatus(Colors.Green);
             };
@@ -1846,21 +1851,21 @@ public static class UnityLauncherProTools
             // check if this project already has server running and process is not closed
             if (webglServerProcesses.ContainsKey(port) && webglServerProcesses[port].HasExited == false)
             {
-                Console.WriteLine("Port found in cache: " + port + " process=" + webglServerProcesses[port]);
+                Console.WriteLine($"Port found in cache: {port} process={webglServerProcesses[port]}");
 
                 // check if project matches
-                if (webglServerProcesses[port].StartInfo.Arguments.IndexOf("\"" + buildPath + "\"") > -1)
+                if (webglServerProcesses[port].StartInfo.Arguments.IndexOf($"\"{buildPath}\"") > -1)
                 {
                     Console.WriteLine("this project already has webgl server running.. lets open browser url only");
                     // then open browser url only
-                    Tools.OpenURL("http://localhost:" + port);
+                    Tools.OpenURL($"http://localhost:{port}");
                     return;
 
                 }
                 else
                 {
-                    Console.WriteLine("Port in use, but its different project: " + port);
-                    Console.WriteLine(webglServerProcesses[port].StartInfo.Arguments + " == " + "\"" + buildPath + "\"");
+                    Console.WriteLine($"Port in use, but its different project: {port}");
+                    Console.WriteLine($"{webglServerProcesses[port].StartInfo.Arguments} == \"{buildPath}\"");
 
                     // then open new port and process
                     // -----------------------------------------------------------
@@ -1885,33 +1890,35 @@ public static class UnityLauncherProTools
                         }
                     }
 
-                    Console.WriteLine("Found available port: " + port);
+                    Console.WriteLine($"Found available port: {port}");
 
                     if (isAvailable == false)
                     {
-                        Console.WriteLine("failed to open port " + port + " (should be open already, or something else is using it?)");
+                        Console.WriteLine(
+                            $"failed to open port {port} (should be open already, or something else is using it?)");
                     }
                     else
                     {
                         // take process id from unity, if have it (then webserver closes automatically when unity is closed)
                         var proc = ProcessHandler.Get(proj.Path);
                         int pid = proc == null ? -1 : proc.Id;
-                        var param = "\"" + webExe + "\" \"" + buildPath + "\" " + port + (pid == -1 ? "" : " " + pid); // server exe path, build folder and port
+                        var param = $"\"{webExe}\" \"{buildPath}\" {port}{(pid == -1 ? "" : $" {pid}")}"; // server exe path, build folder and port
 
                         var webglServerProcess = Tools.LaunchExe(monoExe, param);
 
                         if (webglServerProcesses.ContainsKey(port))
                         {
-                            Console.WriteLine("Error> Should not happen - this port is already in dictionary! port: " + port);
+                            Console.WriteLine(
+                                $"Error> Should not happen - this port is already in dictionary! port: {port}");
                         }
                         else // keep reference to this process on this port
                         {
                             // TODO how to remove process once its closed? (or unlikely to have many processes in total? can also remove during check, if process already null)
                             webglServerProcesses.Add(port, webglServerProcess);
-                            Console.WriteLine("Added port " + port);
+                            Console.WriteLine($"Added port {port}");
                         }
 
-                        Tools.OpenURL("http://localhost:" + port);
+                        Tools.OpenURL($"http://localhost:{port}");
                     }
                     // -----------------------------------------------------------
 
@@ -1919,7 +1926,7 @@ public static class UnityLauncherProTools
             }
             else
             {
-                Console.WriteLine("Port not running in cache or process already closed, remove it from cache: " + port);
+                Console.WriteLine($"Port not running in cache or process already closed, remove it from cache: {port}");
                 if (webglServerProcesses.ContainsKey(port)) webglServerProcesses.Remove(port);
 
                 // TODO remove duplicate code
@@ -1945,18 +1952,19 @@ public static class UnityLauncherProTools
                     }
                 }
 
-                Console.WriteLine("Found available port: " + port);
+                Console.WriteLine($"Found available port: {port}");
 
                 if (isAvailable == false)
                 {
-                    Console.WriteLine("failed to open port " + port + " (should be open already, or something else is using it?)");
+                    Console.WriteLine(
+                        $"failed to open port {port} (should be open already, or something else is using it?)");
                 }
                 else
                 {
                     // take process id from unity, if have it(then webserver closes automatically when unity is closed)
                     var proc = ProcessHandler.Get(proj.Path);
                     int pid = proc == null ? -1 : proc.Id;
-                    var param = "\"" + webExe + "\" \"" + buildPath + "\" " + port + (pid == -1 ? "" : " " + pid); // server exe path, build folder and port
+                    var param = $"\"{webExe}\" \"{buildPath}\" {port}{(pid == -1 ? "" : $" {pid}")}"; // server exe path, build folder and port
 
                     var webglServerProcess = Tools.LaunchExe(monoExe, param);
 
@@ -1967,16 +1975,17 @@ public static class UnityLauncherProTools
 
                     if (webglServerProcesses.ContainsKey(port))
                     {
-                        Console.WriteLine("Error> Should not happen - this port is already in dictionary! port: " + port);
+                        Console.WriteLine(
+                            $"Error> Should not happen - this port is already in dictionary! port: {port}");
                     }
                     else // keep reference to this process on this port
                     {
                         // TODO how to remove process once its closed? (or unlikely to have many processes in total? can also remove during check, if process already null)
                         webglServerProcesses.Add(port, webglServerProcess);
-                        Console.WriteLine("Added port " + port);
+                        Console.WriteLine($"Added port {port}");
                     }
 
-                    Tools.OpenURL("http://localhost:" + port);
+                    Tools.OpenURL($"http://localhost:{port}");
                 }
                 // -----------------------------------------------------------
 
@@ -1992,28 +2001,28 @@ public static class UnityLauncherProTools
 
             //string batchFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "UnityLauncherPro");
             if (Directory.Exists(batchFolder) == false) Directory.CreateDirectory(batchFolder);
-            string batFileName = Path.Combine(batchFolder, proj.Title + ".bat");
+            string batFileName = Path.Combine(batchFolder, $"{proj.Title}.bat");
             string launcherExe = Process.GetCurrentProcess().MainModule.FileName;
-            string args = "-projectPath " + "\"" + proj.Path + "\" " + proj.Arguments;
-            string description = "Unity Project: " + proj.Title;
+            string args = $"-projectPath \"{proj.Path}\" {proj.Arguments}";
+            string description = $"Unity Project: {proj.Title}";
 
             // create .bat file
-            var batLauncherData = "start \"\" \"" + launcherExe + "\"" + " " + args;
+            var batLauncherData = $"start \"\" \"{launcherExe}\" {args}";
             File.WriteAllText(batFileName, batLauncherData);
 
             // create desktop link file
-            using (StreamWriter writer = new StreamWriter(lnkFileName + "\\" + proj.Title + ".url"))
+            using (StreamWriter writer = new StreamWriter($"{lnkFileName}\\{proj.Title}.url"))
             {
                 writer.WriteLine("[InternetShortcut]");
-                writer.WriteLine("URL=file:///" + batFileName);
+                writer.WriteLine($"URL=file:///{batFileName}");
                 //writer.WriteLine("ShowCommand=7"); // doesnt work for minimized
                 writer.WriteLine("IconIndex=0");
-                writer.WriteLine("Arguments=-projectPath " + proj.Path);
+                writer.WriteLine($"Arguments=-projectPath {proj.Path}");
                 // TODO maybe could take icon from project (but then need to convert into .ico)
                 string iconExe = GetUnityExePath(proj.Version);
                 if (iconExe == null) iconExe = launcherExe;
                 string icon = iconExe.Replace('\\', '/');
-                writer.WriteLine("IconFile=" + icon);
+                writer.WriteLine($"IconFile={icon}");
             }
 
             // TODO check for streamwriter and file write success
@@ -2031,7 +2040,7 @@ public static class UnityLauncherProTools
         }
 
         // https://stackoverflow.com/a/468131/5452781
-        static long DirSize(DirectoryInfo d)
+        private static long DirSize(DirectoryInfo d)
         {
             long size = 0;
             // Add file sizes.
@@ -2146,9 +2155,9 @@ public static class UnityLauncherProTools
             // TODO could be optional setting for non-silent uninstall
             LaunchExe(uninstaller, "/S");
             // remove firewall settings
-            var cmd = "netsh advfirewall firewall delete rule name=all program=\"" + path + "\"";
-            Console.WriteLine("Cleanup firewall: " + cmd);
-            LaunchExe("cmd.exe", "/c " + cmd);
+            var cmd = $"netsh advfirewall firewall delete rule name=all program=\"{path}\"";
+            Console.WriteLine($"Cleanup firewall: {cmd}");
+            LaunchExe("cmd.exe", $"/c {cmd}");
 
             int year;
             string[] parts = version.Split('.');
@@ -2156,32 +2165,32 @@ public static class UnityLauncherProTools
             if (parts.Length >= 1 && int.TryParse(parts[0], out year) && year <= 2017)
             {
                 var nodeFolder = Path.Combine(installFolder, "Editor", "Data", "Tools", "nodejs", "node.exe");
-                cmd = "netsh advfirewall firewall delete rule name=all program=\"" + nodeFolder + "\"";
-                Console.WriteLine("Cleanup firewall <= 2017: " + cmd);
-                LaunchExe("cmd.exe", "/c " + cmd);
+                cmd = $"netsh advfirewall firewall delete rule name=all program=\"{nodeFolder}\"";
+                Console.WriteLine($"Cleanup firewall <= 2017: {cmd}");
+                LaunchExe("cmd.exe", $"/c {cmd}");
             }
 
             // remove registry entries
-            var unityKeyName = "HKEY_CURRENT_USER\\Software\\Unity Technologies\\Installer\\Unity " + version;
-            cmd = "reg delete " + unityKeyName + " /f";
-            Console.WriteLine("Removing registry key: " + cmd);
-            LaunchExe("cmd.exe", "/c " + cmd);
+            var unityKeyName = $"HKEY_CURRENT_USER\\Software\\Unity Technologies\\Installer\\Unity {version}";
+            cmd = $"reg delete {unityKeyName} /f";
+            Console.WriteLine($"Removing registry key: {cmd}");
+            LaunchExe("cmd.exe", $"/c {cmd}");
 
             // remove startmenu item
             var startMenuFolder = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
-            var unityIcon = Path.Combine(startMenuFolder, "Unity " + version + "(64-bit)");
+            var unityIcon = Path.Combine(startMenuFolder, $"Unity {version}(64-bit)");
             if (Directory.Exists(unityIcon))
             {
-                Console.WriteLine("Removing startmenu folder: " + unityIcon);
+                Console.WriteLine($"Removing startmenu folder: {unityIcon}");
                 Directory.Delete(unityIcon, true);
             }
 
             // remove desktop icon
             var desktopFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            unityIcon = Path.Combine(startMenuFolder, "Unity " + version + ".lnk");
+            unityIcon = Path.Combine(startMenuFolder, $"Unity {version}.lnk");
             if (File.Exists(unityIcon))
             {
-                Console.WriteLine("Removing desktop icon: " + unityIcon);
+                Console.WriteLine($"Removing desktop icon: {unityIcon}");
                 File.Delete(unityIcon);
             }
         } // UninstallEditor

@@ -1,5 +1,6 @@
 ﻿// Licensed by Daniel Cazzulino under the MIT License : https://gist.github.com/kzu/cfe3cb6e4fe3efea6d24
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -17,7 +18,7 @@ namespace UnityLauncherPro.Helpers
         ICollection<KeyValuePair<TKey, TValue>>, IDictionary<TKey, TValue>,
         INotifyCollectionChanged, INotifyPropertyChanged
     {
-        readonly IDictionary<TKey, TValue> dictionary;
+        private readonly IDictionary<TKey, TValue> dictionary;
 
         /// <summary>Event raised when the collection changes.</summary>
         public event NotifyCollectionChangedEventHandler CollectionChanged = (sender, args) => { };
@@ -25,7 +26,9 @@ namespace UnityLauncherPro.Helpers
         /// <summary>Event raised when a property on the collection changes.</summary>
         public event PropertyChangedEventHandler PropertyChanged = (sender, args) => { };
 
-        /// <summary>
+        public int Count => dictionary.Count;
+
+        /// <summary>1
         /// Initializes an instance of the class.
         /// </summary>
         public ObservableDictionary()
@@ -37,17 +40,17 @@ namespace UnityLauncherPro.Helpers
         /// Initializes an instance of the class using another dictionary as 
         /// the key/value store.
         /// </summary>
-        public ObservableDictionary(IDictionary<TKey, TValue> dictionary)
+        private ObservableDictionary(IDictionary<TKey, TValue> dictionary)
         {
-            this.dictionary = dictionary;
+            this.dictionary = dictionary ?? new ConcurrentDictionary<TKey, TValue>();
         }
 
-        void AddWithNotification(KeyValuePair<TKey, TValue> item)
+        private void AddWithNotification(KeyValuePair<TKey, TValue> item)
         {
             AddWithNotification(item.Key, item.Value);
         }
 
-        void AddWithNotification(TKey key, TValue value)
+        private void AddWithNotification(TKey key, TValue value)
         {
             dictionary.Add(key, value);
 
@@ -58,7 +61,7 @@ namespace UnityLauncherPro.Helpers
             PropertyChanged(this, new PropertyChangedEventArgs("Values"));
         }
 
-        bool RemoveWithNotification(TKey key)
+        private bool RemoveWithNotification(TKey key)
         {
             TValue value;
             if (dictionary.TryGetValue(key, out value) && dictionary.Remove(key))
@@ -75,7 +78,7 @@ namespace UnityLauncherPro.Helpers
             return false;
         }
 
-        void UpdateWithNotification(TKey key, TValue value)
+        private void UpdateWithNotification(TKey key, TValue value)
         {
             TValue existing;
             if (dictionary.TryGetValue(key, out existing))

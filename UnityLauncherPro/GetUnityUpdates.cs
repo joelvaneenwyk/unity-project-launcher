@@ -8,8 +8,8 @@ namespace UnityLauncherPro
 {
     public static class GetUnityUpdates
     {
-        static bool isDownloadingUnityList = false;
-        static readonly string unityVersionsURL = @"http://symbolserver.unity3d.com/000Admin/history.txt";
+        private static bool isDownloadingUnityList = false;
+        private static readonly string unityVersionsURL = @"http://symbolserver.unity3d.com/000Admin/history.txt";
 
         public static async Task<string> Scan()
         {

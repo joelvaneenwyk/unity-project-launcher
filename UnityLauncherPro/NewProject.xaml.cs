@@ -17,11 +17,11 @@ namespace UnityLauncherPro
         public static string selectedPlatform = null;
         public static string[] platformsForThisUnity = null;
 
-        bool isInitializing = true; // to keep OnChangeEvent from firing too early
-        int previousSelectedTemplateIndex = -1;
-        int previousSelectedModuleIndex = -1;
+        private bool isInitializing = true; // to keep OnChangeEvent from firing too early
+        private int previousSelectedTemplateIndex = -1;
+        private int previousSelectedModuleIndex = -1;
 
-        static string targetFolder = null;
+        private static string targetFolder = null;
 
         public NewProject(string unityVersion, string suggestedName, string targetFolder, bool nameIsLocked = false)
         {
@@ -78,7 +78,7 @@ namespace UnityLauncherPro
             isInitializing = false;
         }  // NewProject
 
-        void UpdateTemplatesDropDown(string unityPath)
+        private void UpdateTemplatesDropDown(string unityPath)
         {
             // scan available templates, TODO could cache this at least per session?
             cmbNewProjectTemplate.ItemsSource = Tools.ScanTemplates(unityPath);
@@ -87,7 +87,7 @@ namespace UnityLauncherPro
         }
 
 
-        void UpdateModulesDropdown(string version)
+        private void UpdateModulesDropdown(string version)
         {
             // get modules and stick into combobox, NOTE we already have this info from GetProjects.Scan, so could access it
             platformsForThisUnity = Tools.GetPlatformsForUnityVersion(version);
@@ -205,7 +205,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void UpdateSelectedVersion()
+        private void UpdateSelectedVersion()
         {
             var k = gridAvailableVersions.SelectedItem as UnityInstallation;
             if (k != null && k.Version != newVersion)
@@ -270,7 +270,7 @@ namespace UnityLauncherPro
             }
         }
 
-        void GenerateNewName()
+        private void GenerateNewName()
         {
             var newProj = Tools.GetSuggestedProjectName(newVersion, lblNewProjectFolder.Content.ToString());
             txtNewProjectName.Text = newProj;

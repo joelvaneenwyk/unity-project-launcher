@@ -1,7 +1,6 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.539
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34902.84
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityLauncherPro", "UnityLauncherPro\UnityLauncherPro.csproj", "{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}"
 EndProject
@@ -10,14 +9,20 @@ Global
 		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Debug|ARM64.Build.0 = Debug|ARM64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Debug|x64.ActiveCfg = Debug|x64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Debug|x64.Build.0 = Debug|x64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|ARM64.ActiveCfg = Release|ARM64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|ARM64.Build.0 = Release|ARM64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.ActiveCfg = Release|x64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -25,7 +30,14 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD70E364-F81A-402C-A387-1BEB396796A2}
 	EndGlobalSection
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
+EndGlobal
+91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.ActiveCfg = Release|x64
+		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CD70E364-F81A-402C-A387-1BEB396796A2}
 	EndGlobalSection
 EndGlobal

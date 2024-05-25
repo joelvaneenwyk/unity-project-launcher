@@ -21,7 +21,8 @@ try {
 
       Write-Host 'Compressing executable into archive...'
       $OutputFilename = "UnityLauncherPro.zip"
-      $OutputPath = "$ScriptPath/.build/$OutputFilename"
+      $OutputPath = "$ScriptPath/.build/"
+      $OutputFilePath = "$ScriptPath/.build/$OutputFilename"
       if (Test-Path "$OutputPath" -PathType Leaf) {
             Remove-Item -Force -Path "$OutputPath"
       }

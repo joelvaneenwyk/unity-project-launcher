@@ -26,29 +26,22 @@ jobs:
           submodule: recursive
           fetch-depth: 0
 
-      - name: Check Commit and Install 7Zip PowerShell Module
-        shell: powershell
-        run: |
-          # Convert commit message to a single line if multiline
-          $singleLineStrVal = "$Env:COMMIT_MESSAGE" -replace "`r`n", " " -replace "`n", " "
-          if($singleLineStrVal -match '#GITBUILD')
-          {
-                Write-Host 'Commit message matched with "#GITBUILD"'
-          }
-          Write-Host 'Installing 7Zip PowerShell module'
-        env:
-          COMMIT_MESSAGE: "${{ github.event.commits[0].message }}"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.x"
 
       - name: Restore NuGet packages
-        run: nuget restore UnityLauncherPro.sln
+        run: dotnet restore
 
       - name: Build Binary
         shell: cmd
-        run: call ./Build.cmd
+        run: dotnet build
 
-      - name: Build Artifact
-        shell: cmd
-        run: call ./ArtifactBuild.cmd
+      - name: Create Archive
+        shell: powershell
+        run: ./CreateArchive.ps1
+        env:
+          COMMIT_MESSAGE: "${{ github.event.commits[0].message }}"
 
       - name: Get current date and time
         id: datetime

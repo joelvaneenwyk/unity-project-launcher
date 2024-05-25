@@ -31,9 +31,6 @@
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 	</PropertyGroup>
 	<ItemGroup>
-		<Reference Include="System.Configuration" />
-	</ItemGroup>
-	<ItemGroup>
 		<BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
 			<Visible>False</Visible>
 			<ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
@@ -53,6 +50,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
 	</ItemGroup>
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">

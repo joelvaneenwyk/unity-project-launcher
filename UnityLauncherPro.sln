@@ -4,6 +4,18 @@ VisualStudioVersion = 17.10.34902.84
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityLauncherPro", "UnityLauncherPro\UnityLauncherPro.csproj", "{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{root}", "{root}", "{D79C5EF7-056F-406F-829E-C4E2E4C4D02C}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		appveyor.yml = appveyor.yml
+		Build.cmd = Build.cmd
+		CreateArchive.ps1 = CreateArchive.ps1
+		cspell.config.yaml = cspell.config.yaml
+		LICENSE = LICENSE
+		Paths.cmd.template = Paths.cmd.template
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -22,16 +34,6 @@ Global
 		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|ARM64.ActiveCfg = Release|ARM64
 		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|ARM64.Build.0 = Release|ARM64
 		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.ActiveCfg = Release|x64
-		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.Build.0 = Release|x64
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {CD70E364-F81A-402C-A387-1BEB396796A2}
-	EndGlobalSection
-EndGlobal
-91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.ActiveCfg = Release|x64
 		{EC78D91A-3E63-4CAA-8BC3-9673A30FDA45}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution

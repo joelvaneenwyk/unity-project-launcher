@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
 
 namespace UnityLauncherPro
 {
@@ -17,10 +17,10 @@ namespace UnityLauncherPro
         private static ObservableCollection<ThemeColor> themeColors = new ObservableCollection<ThemeColor>();
         private static ObservableCollection<ThemeColor> themeColorsOrig = new ObservableCollection<ThemeColor>();
 
-        private string previousSaveFileName = null;
+        private string previousSaveFileName;
 
         // hack for adjusting slider, without triggering onchange..
-        private bool forceValue = false;
+        private bool forceValue;
 
         // for single undo
         private Slider previousSlider;
@@ -133,7 +133,7 @@ namespace UnityLauncherPro
                 iniRows.Add("# Created with UnityLauncherPro built-in theme editor " + DateTime.Now.ToString("dd/MM/yyyy"));
                 for (int i = 0; i < themeColors.Count; i++)
                 {
-                    iniRows.Add(themeColors[i].Key + "=" + themeColors[i].Brush.ToString());
+                    iniRows.Add(themeColors[i].Key + "=" + themeColors[i].Brush);
                 }
 
                 var themePath = saveFileDialog.FileName;
@@ -171,19 +171,19 @@ namespace UnityLauncherPro
         private void SliderRed_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             // onchanged is called before other components are ready..thanks wpf :D
-            if (forceValue == true || txtRed == null) return;
+            if (forceValue || txtRed == null) return;
             UpdateColorPreview();
         }
 
         private void SliderGreen_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (forceValue == true || txtGreen == null) return;
+            if (forceValue || txtGreen == null) return;
             UpdateColorPreview();
         }
 
         private void SliderBlue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (forceValue == true || txtBlue == null) return;
+            if (forceValue || txtBlue == null) return;
             UpdateColorPreview();
         }
 
@@ -201,7 +201,7 @@ namespace UnityLauncherPro
 
         private void SliderAlpha_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (forceValue == true) return;
+            if (forceValue) return;
             if (txtAlpha == null) return;
             UpdateColorPreview();
         }
@@ -274,7 +274,7 @@ namespace UnityLauncherPro
                 source.Text = col + "";
                 target.Value = col;
 
-                if (overWrite == true) source.SelectAll();
+                if (overWrite) source.SelectAll();
             }
         }
 

@@ -8,12 +8,12 @@ namespace UnityLauncherPro
 {
     public static class GetUnityUpdates
     {
-        private static bool isDownloadingUnityList = false;
+        private static bool isDownloadingUnityList;
         private static readonly string unityVersionsURL = @"http://symbolserver.unity3d.com/000Admin/history.txt";
 
         public static async Task<string> Scan()
         {
-            if (isDownloadingUnityList == true)
+            if (isDownloadingUnityList)
             {
                 Console.WriteLine("We are already downloading ...");
                 return null;

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
-using System.Drawing; // for notifyicon
+using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -16,43 +16,58 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shell;
 using UnityLauncherPro.Helpers;
 using UnityLauncherPro.Properties;
+using Application = System.Windows.Application;
+using Brushes = System.Windows.Media.Brushes;
+using Button = System.Windows.Controls.Button;
+using CheckBox = System.Windows.Controls.CheckBox;
+using Clipboard = System.Windows.Clipboard;
+using Color = System.Windows.Media.Color;
+using ComboBox = System.Windows.Controls.ComboBox;
+using DataGrid = System.Windows.Controls.DataGrid;
+using DataGridCell = System.Windows.Controls.DataGridCell;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using MessageBox = System.Windows.MessageBox;
+using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
+using TextBox = System.Windows.Controls.TextBox;
+// for notifyicon
 
 namespace UnityLauncherPro
 {
     public partial class MainWindow : Window
     {
         public const string appName = "UnityLauncherPro";
-        public static string currentDateFormat = null;
-        public static bool useHumanFriendlyDateFormat = false;
-        public static bool searchProjectPathAlso = false;
+        public static string currentDateFormat;
+        public static bool useHumanFriendlyDateFormat;
+        public static bool searchProjectPathAlso;
         public static List<Project> projectsSource;
         public static List<UnityInstallation> unityInstallationsSource;
         public static ObservableDictionary<string, string> unityInstalledVersions = new ObservableDictionary<string, string>(); // versionID and installation folder
         public static readonly string launcherArgumentsFile = "LauncherArguments.txt";
         public static readonly string projectNameFile = "ProjectName.txt";
-        public static string preferredVersion = null;
-        public static int projectNameSetting = 0; // 0 = folder or ProjectName.txt if exists, 1=ProductName
+        public static string preferredVersion;
+        public static int projectNameSetting; // 0 = folder or ProjectName.txt if exists, 1=ProductName
         public static readonly string initScriptFileFullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts", "InitializeProject.cs");
 
         private const string contextRegRoot = "Software\\Classes\\Directory\\Background\\shell";
         private const string githubURL = "https://github.com/unitycoder/UnityLauncherPro";
         private const string resourcesURL = "https://github.com/unitycoder/UnityResources";
         private const string defaultAdbLogCatArgs = "-s Unity ActivityManager PackageManager dalvikvm DEBUG -v color";
-        private System.Windows.Forms.NotifyIcon notifyIcon;
+        private NotifyIcon notifyIcon;
 
         private Updates[] updatesSource;
         public static List<string> updatesAsStrings;
 
-        private string _filterString = null;
-        private bool multiWordSearch = false;
+        private string _filterString;
+        private bool multiWordSearch;
         private string[] searchWords;
 
-        private int lastSelectedProjectIndex = 0;
+        private int lastSelectedProjectIndex;
         private Mutex myMutex;
         private ThemeEditor themeEditorWindow;
         internal static int webglPort = 50000;
@@ -63,12 +78,12 @@ namespace UnityLauncherPro
 
         private Dictionary<string, SolidColorBrush> origResourceColors = new Dictionary<string, SolidColorBrush>();
 
-        private string currentBuildReportProjectPath = null;
+        private string currentBuildReportProjectPath;
 
-        private string currentBuildPluginsRelativePath = null;
+        private string currentBuildPluginsRelativePath;
         //List<List<string>> buildReports = new List<List<string>>();
         private List<BuildReport> buildReports = new List<BuildReport>(); // multiple reports, each contains their own stats and items
-        private int currentBuildReport = 0;
+        private int currentBuildReport;
 
         [DllImport("user32", CharSet = CharSet.Unicode)]
         private static extern IntPtr FindWindow(string cls, string win);
@@ -132,7 +147,7 @@ namespace UnityLauncherPro
             //Properties.Settings.Default.projectPaths = null;
             //Properties.Settings.Default.Save();
 
-            projectsSource = GetProjects.Scan(getGitBranch: (bool)chkShowGitBranchColumn.IsChecked, getPlasticBranch: (bool)chkCheckPlasticBranch.IsChecked, getArguments: (bool)chkShowLauncherArgumentsColumn.IsChecked, showMissingFolders: (bool)chkShowMissingFolderProjects.IsChecked, showTargetPlatform: (bool)chkShowPlatform.IsChecked, AllProjectPaths: Properties.Settings.Default.projectPaths);
+            projectsSource = GetProjects.Scan(getGitBranch: (bool)chkShowGitBranchColumn.IsChecked, getPlasticBranch: (bool)chkCheckPlasticBranch.IsChecked, getArguments: (bool)chkShowLauncherArgumentsColumn.IsChecked, showMissingFolders: (bool)chkShowMissingFolderProjects.IsChecked, showTargetPlatform: (bool)chkShowPlatform.IsChecked, AllProjectPaths: Settings.Default.projectPaths);
 
             Console.WriteLine("projectsSource.Count: " + projectsSource.Count);
 
@@ -147,9 +162,9 @@ namespace UnityLauncherPro
             gridBuildReportData.Items.Clear();
 
             // build notifyicon (using windows.forms)
-            notifyIcon = new System.Windows.Forms.NotifyIcon();
+            notifyIcon = new NotifyIcon();
             notifyIcon.Icon = new Icon(Application.GetResourceStream(new Uri("pack://application:,,,/Images/icon.ico")).Stream);
-            notifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(NotifyIcon_MouseClick);
+            notifyIcon.MouseClick += NotifyIcon_MouseClick;
 
             // get original colors
             foreach (DictionaryEntry item in Application.Current.Resources.MergedDictionaries[0])
@@ -160,14 +175,14 @@ namespace UnityLauncherPro
             ApplyTheme(txtCustomThemeFile.Text);
 
             // for autostart with minimized
-            if (Settings.Default.runAutomatically == true && Settings.Default.runAutomaticallyMinimized == true)
+            if (Settings.Default.runAutomatically && Settings.Default.runAutomaticallyMinimized)
             {
                 // if application was system started, then hide, otherwise dont hide (when user started it)
                 if (Directory.GetCurrentDirectory().ToLower() == @"c:\windows\system32")
                 {
-                    this.ShowInTaskbar = false; // for some reason, otherwise it will show in taskbar only at start
+                    ShowInTaskbar = false; // for some reason, otherwise it will show in taskbar only at start
                     notifyIcon.Visible = true;
-                    this.Hide();
+                    Hide();
                 }
             }
 
@@ -228,9 +243,9 @@ namespace UnityLauncherPro
                     // NOTE if keydown, window doesnt become active and focused
                     if (string.IsNullOrEmpty(version) || (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
                     {
-                        if (Directory.Exists(Path.Combine(proj.Path, "Assets")) == true)
+                        if (Directory.Exists(Path.Combine(proj.Path, "Assets")))
                         {
-                            Tools.DisplayUpgradeDialog(proj, null, false);
+                            Tools.DisplayUpgradeDialog(proj, null);
                         }
                         else // no assets folder here, then its new project
                         {
@@ -247,7 +262,7 @@ namespace UnityLauncherPro
                     }
 
                     // quit after launch if enabled in settings
-                    if (Properties.Settings.Default.closeAfterExplorer == true)
+                    if (Settings.Default.closeAfterExplorer)
                     {
                         Environment.Exit(0);
                     }
@@ -324,7 +339,7 @@ namespace UnityLauncherPro
             Project proj = item as Project;
 
             // split search string by space, if it contains space
-            if (multiWordSearch == true)
+            if (multiWordSearch)
             {
                 bool found = true;
                 foreach (var word in searchWords)
@@ -335,7 +350,8 @@ namespace UnityLauncherPro
                 }
                 return found;
             }
-            else // single word search
+
+            // single word search
             {
                 bool titleMatched = proj.Title.IndexOf(_filterString, 0, StringComparison.CurrentCultureIgnoreCase) != -1;
                 bool pathMatched = searchProjectPathAlso && proj.Path.IndexOf(_filterString, 0, StringComparison.CurrentCultureIgnoreCase) != -1;
@@ -396,33 +412,33 @@ namespace UnityLauncherPro
             {
                 Settings.Default.Reload();
                 // form size
-                this.Width = Properties.Settings.Default.windowWidth;
-                this.Height = Properties.Settings.Default.windowHeight;
+                Width = Settings.Default.windowWidth;
+                Height = Settings.Default.windowHeight;
 
-                chkMinimizeToTaskbar.IsChecked = Properties.Settings.Default.minimizeToTaskbar;
-                chkRegisterExplorerMenu.IsChecked = Properties.Settings.Default.registerExplorerMenu;
+                chkMinimizeToTaskbar.IsChecked = Settings.Default.minimizeToTaskbar;
+                chkRegisterExplorerMenu.IsChecked = Settings.Default.registerExplorerMenu;
 
                 // update settings window
-                chkQuitAfterCommandline.IsChecked = Properties.Settings.Default.closeAfterExplorer;
-                chkQuitAfterOpen.IsChecked = Properties.Settings.Default.closeAfterProject;
-                chkShowLauncherArgumentsColumn.IsChecked = Properties.Settings.Default.showArgumentsColumn;
-                chkShowGitBranchColumn.IsChecked = Properties.Settings.Default.showGitBranchColumn;
-                chkCheckPlasticBranch.IsChecked = Properties.Settings.Default.checkPlasticBranch;
-                chkShowMissingFolderProjects.IsChecked = Properties.Settings.Default.showProjectsMissingFolder;
-                chkAllowSingleInstanceOnly.IsChecked = Properties.Settings.Default.AllowSingleInstanceOnly;
-                chkAskNameForQuickProject.IsChecked = Properties.Settings.Default.askNameForQuickProject;
-                chkEnableProjectRename.IsChecked = Properties.Settings.Default.enableProjectRename;
-                chkStreamerMode.IsChecked = Properties.Settings.Default.streamerMode;
-                chkShowPlatform.IsChecked = Properties.Settings.Default.showTargetPlatform;
-                chkUseCustomTheme.IsChecked = Properties.Settings.Default.useCustomTheme;
-                txtRootFolderForNewProjects.Text = Properties.Settings.Default.newProjectsRoot;
-                txtWebglRelativePath.Text = Properties.Settings.Default.webglBuildPath;
-                txtCustomThemeFile.Text = Properties.Settings.Default.themeFile;
-                useAlphaReleaseNotesSite.IsChecked = Properties.Settings.Default.useAlphaReleaseNotes;
+                chkQuitAfterCommandline.IsChecked = Settings.Default.closeAfterExplorer;
+                chkQuitAfterOpen.IsChecked = Settings.Default.closeAfterProject;
+                chkShowLauncherArgumentsColumn.IsChecked = Settings.Default.showArgumentsColumn;
+                chkShowGitBranchColumn.IsChecked = Settings.Default.showGitBranchColumn;
+                chkCheckPlasticBranch.IsChecked = Settings.Default.checkPlasticBranch;
+                chkShowMissingFolderProjects.IsChecked = Settings.Default.showProjectsMissingFolder;
+                chkAllowSingleInstanceOnly.IsChecked = Settings.Default.AllowSingleInstanceOnly;
+                chkAskNameForQuickProject.IsChecked = Settings.Default.askNameForQuickProject;
+                chkEnableProjectRename.IsChecked = Settings.Default.enableProjectRename;
+                chkStreamerMode.IsChecked = Settings.Default.streamerMode;
+                chkShowPlatform.IsChecked = Settings.Default.showTargetPlatform;
+                chkUseCustomTheme.IsChecked = Settings.Default.useCustomTheme;
+                txtRootFolderForNewProjects.Text = Settings.Default.newProjectsRoot;
+                txtWebglRelativePath.Text = Settings.Default.webglBuildPath;
+                txtCustomThemeFile.Text = Settings.Default.themeFile;
+                useAlphaReleaseNotesSite.IsChecked = Settings.Default.useAlphaReleaseNotes;
 
-                chkEnablePlatformSelection.IsChecked = Properties.Settings.Default.enablePlatformSelection;
-                chkRunAutomatically.IsChecked = Properties.Settings.Default.runAutomatically;
-                chkRunAutomaticallyMinimized.IsChecked = Properties.Settings.Default.runAutomaticallyMinimized;
+                chkEnablePlatformSelection.IsChecked = Settings.Default.enablePlatformSelection;
+                chkRunAutomatically.IsChecked = Settings.Default.runAutomatically;
+                chkRunAutomaticallyMinimized.IsChecked = Settings.Default.runAutomaticallyMinimized;
 
                 // update optional grid columns, hidden or visible
                 gridRecent.Columns[4].Visibility = (bool)chkShowLauncherArgumentsColumn.IsChecked ? Visibility.Visible : Visibility.Collapsed;
@@ -433,7 +449,7 @@ namespace UnityLauncherPro
                 lstRootFolders.Items.Clear();
 
                 // check if no installation root folders are added, then add default folder(s), this usually happens only on first run (or if user has not added any folders)
-                if (Properties.Settings.Default.rootFolders.Count == 0)
+                if (Settings.Default.rootFolders.Count == 0)
                 {
                     // default hub installation folder
                     string baseFolder = "\\Program Files\\Unity\\Hub\\Editor";
@@ -444,29 +460,29 @@ namespace UnityLauncherPro
                     string defaultFolder4 = "D:" + baseFolder2;
                     if (Directory.Exists(defaultFolder1))
                     {
-                        Properties.Settings.Default.rootFolders.Add(defaultFolder1);
+                        Settings.Default.rootFolders.Add(defaultFolder1);
                     }
                     else if (Directory.Exists(defaultFolder2))
                     {
-                        Properties.Settings.Default.rootFolders.Add(defaultFolder2);
+                        Settings.Default.rootFolders.Add(defaultFolder2);
                     }
                     else if (Directory.Exists(defaultFolder3))
                     {
                         if (GetUnityInstallations.HasUnityInstallations(defaultFolder3))
                         {
-                            Properties.Settings.Default.rootFolders.Add(defaultFolder3);
+                            Settings.Default.rootFolders.Add(defaultFolder3);
                         }
                         else if (GetUnityInstallations.HasUnityInstallations(defaultFolder4))
                         {
-                            Properties.Settings.Default.rootFolders.Add(defaultFolder4);
+                            Settings.Default.rootFolders.Add(defaultFolder4);
                         }
                     }
                 }
 
-                lstRootFolders.ItemsSource = Properties.Settings.Default.rootFolders;
+                lstRootFolders.ItemsSource = Settings.Default.rootFolders;
 
                 // restore recent project datagrid column widths
-                int[] gridColumnWidths = Properties.Settings.Default.gridColumnWidths;
+                int[] gridColumnWidths = Settings.Default.gridColumnWidths;
                 if (gridColumnWidths != null)
                 {
                     for (int i = 0; i < gridColumnWidths.Length; ++i)
@@ -477,7 +493,7 @@ namespace UnityLauncherPro
                 }
 
                 // restore buildreport datagrid column widths
-                gridColumnWidths = Properties.Settings.Default.gridColumnWidthsBuildReport;
+                gridColumnWidths = Settings.Default.gridColumnWidthsBuildReport;
                 if (gridColumnWidths != null)
                 {
                     for (int i = 0; i < gridColumnWidths.Length; ++i)
@@ -615,9 +631,9 @@ namespace UnityLauncherPro
             List<int> gridWidths;
 
             // if we dont have any settings yet
-            if (Properties.Settings.Default.gridColumnWidths != null)
+            if (Settings.Default.gridColumnWidths != null)
             {
-                gridWidths = new List<int>(Properties.Settings.Default.gridColumnWidths);
+                gridWidths = new List<int>(Settings.Default.gridColumnWidths);
             }
             else
             {
@@ -628,7 +644,7 @@ namespace UnityLauncherPro
             var column = gridRecent.Columns[0];
             for (int i = 0; i < gridRecent.Columns.Count; ++i)
             {
-                if (Properties.Settings.Default.gridColumnWidths != null && Properties.Settings.Default.gridColumnWidths.Length > i)
+                if (Settings.Default.gridColumnWidths != null && Settings.Default.gridColumnWidths.Length > i)
                 {
                     gridWidths[i] = (int)gridRecent.Columns[i].Width.Value;
                 }
@@ -637,17 +653,17 @@ namespace UnityLauncherPro
                     gridWidths.Add((int)gridRecent.Columns[i].Width.Value);
                 }
             }
-            Properties.Settings.Default.gridColumnWidths = gridWidths.ToArray();
-            Properties.Settings.Default.Save();
+            Settings.Default.gridColumnWidths = gridWidths.ToArray();
+            Settings.Default.Save();
 
 
             // save buildrepot column widths
             gridWidths.Clear();
 
             // if we dont have any settings yet
-            if (Properties.Settings.Default.gridColumnWidthsBuildReport != null)
+            if (Settings.Default.gridColumnWidthsBuildReport != null)
             {
-                gridWidths = new List<int>(Properties.Settings.Default.gridColumnWidthsBuildReport);
+                gridWidths = new List<int>(Settings.Default.gridColumnWidthsBuildReport);
             }
             else
             {
@@ -658,7 +674,7 @@ namespace UnityLauncherPro
             column = gridBuildReport.Columns[0];
             for (int i = 0; i < gridBuildReport.Columns.Count; ++i)
             {
-                if (Properties.Settings.Default.gridColumnWidthsBuildReport != null && Properties.Settings.Default.gridColumnWidthsBuildReport.Length > i)
+                if (Settings.Default.gridColumnWidthsBuildReport != null && Settings.Default.gridColumnWidthsBuildReport.Length > i)
                 {
                     gridWidths[i] = (int)gridBuildReport.Columns[i].Width.Value;
                 }
@@ -667,9 +683,9 @@ namespace UnityLauncherPro
                     gridWidths.Add((int)gridBuildReport.Columns[i].Width.Value);
                 }
             }
-            Properties.Settings.Default.gridColumnWidthsBuildReport = gridWidths.ToArray();
-            Properties.Settings.Default.projectName = projectNameSetting;
-            Properties.Settings.Default.Save();
+            Settings.Default.gridColumnWidthsBuildReport = gridWidths.ToArray();
+            Settings.Default.projectName = projectNameSetting;
+            Settings.Default.Save();
 
             // make backup
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
@@ -723,16 +739,16 @@ namespace UnityLauncherPro
 
         private void AddUnityInstallationRootFolder()
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            var dialog = new FolderBrowserDialog();
             dialog.Description = "Select Unity installations root folder";
 
             var result = dialog.ShowDialog();
             var newRoot = dialog.SelectedPath;
-            if (String.IsNullOrWhiteSpace(newRoot) == false && Directory.Exists(newRoot) == true)
+            if (String.IsNullOrWhiteSpace(newRoot) == false && Directory.Exists(newRoot))
             {
-                Properties.Settings.Default.rootFolders.Add(newRoot);
+                Settings.Default.rootFolders.Add(newRoot);
                 lstRootFolders.Items.Refresh();
-                Properties.Settings.Default.Save();
+                Settings.Default.Save();
                 UpdateUnityInstallationsList();
                 RefreshRecentProjects();
             }
@@ -804,11 +820,11 @@ namespace UnityLauncherPro
         //
 
         // maximize window
-        private void NotifyIcon_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void NotifyIcon_MouseClick(object sender, MouseEventArgs e)
         {
-            this.Show();
-            this.WindowState = WindowState.Normal;
-            this.ShowInTaskbar = true;
+            Show();
+            WindowState = WindowState.Normal;
+            ShowInTaskbar = true;
             notifyIcon.Visible = false;
             // NOTE workaround for grid not focused when coming back from minimized window
             Tools.SetFocusToGrid(gridRecent, gridRecent.SelectedIndex);
@@ -816,7 +832,7 @@ namespace UnityLauncherPro
 
         private void OnRectangleMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left) this.DragMove();
+            if (e.ChangedButton == MouseButton.Left) DragMove();
         }
 
         private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
@@ -850,8 +866,8 @@ namespace UnityLauncherPro
             p.Title = Path.GetFileName(folder);
             p.Version = Tools.GetProjectVersion(folder);
             p.Arguments = Tools.ReadCustomProjectData(folder, launcherArgumentsFile);
-            if ((bool)chkShowPlatform.IsChecked == true) p.TargetPlatform = Tools.GetTargetPlatform(folder);
-            if ((bool)chkShowGitBranchColumn.IsChecked == true) p.GITBranch = Tools.ReadGitBranchInfo(folder);
+            if ((bool)chkShowPlatform.IsChecked) p.TargetPlatform = Tools.GetTargetPlatform(folder);
+            if ((bool)chkShowGitBranchColumn.IsChecked) p.GITBranch = Tools.ReadGitBranchInfo(folder);
             return p;
         }
 
@@ -867,7 +883,7 @@ namespace UnityLauncherPro
 
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)
@@ -879,11 +895,11 @@ namespace UnityLauncherPro
             if (chkMinimizeToTaskbar.IsChecked == true)
             {
                 notifyIcon.Visible = true;
-                this.Hide();
+                Hide();
             }
             else
             {
-                this.WindowState = WindowState.Minimized;
+                WindowState = WindowState.Minimized;
             }
         }
 
@@ -1018,8 +1034,6 @@ namespace UnityLauncherPro
                             break;
                     }
                     break;
-                default:
-                    break;
             }
 
         }
@@ -1034,7 +1048,7 @@ namespace UnityLauncherPro
                 {
                     var task = GetUnityUpdates.Scan();
                     var items = await task;
-                    if (task.IsCompleted == false || task.IsFaulted == true) return;
+                    if (task.IsCompleted == false || task.IsFaulted) return;
                     if (items == null) return;
                     updatesSource = GetUnityUpdates.Parse(items, ref updatesAsStrings);
                     if (updatesSource == null) return;
@@ -1076,13 +1090,13 @@ namespace UnityLauncherPro
         // save window size after resize
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var win = (Window)sender;
             // save new size instead, to fix DPI scaling issue
-            Properties.Settings.Default.windowWidth = (int)e.NewSize.Width;
-            Properties.Settings.Default.windowHeight = (int)e.NewSize.Height;
-            Properties.Settings.Default.Save();
+            Settings.Default.windowWidth = (int)e.NewSize.Width;
+            Settings.Default.windowHeight = (int)e.NewSize.Height;
+            Settings.Default.Save();
         }
 
         private void BtnLaunchProject_Click(object sender, RoutedEventArgs e)
@@ -1153,7 +1167,7 @@ namespace UnityLauncherPro
             var proj = GetSelectedProject();
             if (proj == null) return;
 
-            Tools.DisplayUpgradeDialog(proj, this, false);
+            Tools.DisplayUpgradeDialog(proj, this);
         }
 
         private void GridRecent_Loaded(object sender, RoutedEventArgs e)
@@ -1249,8 +1263,6 @@ namespace UnityLauncherPro
                     gridRecent.SelectedIndex = ++gridRecent.SelectedIndex % gridRecent.Items.Count;
                     e.Handled = true; // to stay in first row
                     break;
-                default:
-                    break;
             }
         }
 
@@ -1261,8 +1273,6 @@ namespace UnityLauncherPro
                 case Key.Up:
                 case Key.Down:
                     Tools.SetFocusToGrid(dataGridUnitys);
-                    break;
-                default:
                     break;
             }
         }
@@ -1276,8 +1286,8 @@ namespace UnityLauncherPro
         {
             if (lstRootFolders.SelectedIndex > -1)
             {
-                Properties.Settings.Default.rootFolders.Remove(lstRootFolders.Items[lstRootFolders.SelectedIndex].ToString());
-                Properties.Settings.Default.Save();
+                Settings.Default.rootFolders.Remove(lstRootFolders.Items[lstRootFolders.SelectedIndex].ToString());
+                Settings.Default.Save();
                 lstRootFolders.Items.Refresh();
                 UpdateUnityInstallationsList();
             }
@@ -1290,27 +1300,27 @@ namespace UnityLauncherPro
             {
                 case Key.Home: // override home
                     // if edit mode, dont override keys
-                    if (IsEditingCell(gridRecent) == true) return;
+                    if (IsEditingCell(gridRecent)) return;
                     gridRecent.SelectedIndex = 0;
                     gridRecent.ScrollIntoView(gridRecent.SelectedItem);
                     e.Handled = true;
                     break;
                 case Key.End: // override end
                     // if edit mode, dont override keys
-                    if (IsEditingCell(gridRecent) == true) return;
+                    if (IsEditingCell(gridRecent)) return;
                     gridRecent.SelectedIndex = gridRecent.Items.Count - 1;
                     gridRecent.ScrollIntoView(gridRecent.SelectedItem);
                     e.Handled = true;
                     break;
                 case Key.F5: // refresh projects
                     // if edit mode, dont override keys
-                    if (IsEditingCell(gridRecent) == true) return;
+                    if (IsEditingCell(gridRecent)) return;
                     UpdateUnityInstallationsList();
                     RefreshRecentProjects();
                     break;
                 case Key.Tab:
                     // if edit mode, dont override keys
-                    if (IsEditingCell(gridRecent) == true) return;
+                    if (IsEditingCell(gridRecent)) return;
                     if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                     {
                         e.Handled = true;
@@ -1318,7 +1328,7 @@ namespace UnityLauncherPro
                     break;
                 case Key.Return:
                     // if edit mode, dont override keys
-                    if (IsEditingCell(gridRecent) == true) return;
+                    if (IsEditingCell(gridRecent)) return;
                     e.Handled = true;
                     var proj = GetSelectedProject();
                     var proc = Tools.LaunchProject(proj);
@@ -1327,11 +1337,9 @@ namespace UnityLauncherPro
                 case Key.Delete:
                     //    // TODO if have enabled deleting projects in settings, NOTE: this would then require undo also (if accidentally delete projects from list with few keypresses, the context menu is less accident prone)
                     //    // if edit mode, dont override keys
-                    if (IsEditingCell(gridRecent) == true) return;
+                    if (IsEditingCell(gridRecent)) return;
                     e.Handled = true;
                     //    MenuRemoveProject_Click(null, null);
-                    break;
-                default:
                     break;
             }
         }
@@ -1370,15 +1378,13 @@ namespace UnityLauncherPro
                     Tools.SetFocusToGrid(dataGridUpdates);
                     e.Handled = true;
                     break;
-                default:
-                    break;
             }
         }
 
         private void BtnOpenEditorLogsFolder_Click(object sender, RoutedEventArgs e)
         {
             var logfolder = Tools.GetEditorLogsFolder();
-            if (Directory.Exists(logfolder) == true)
+            if (Directory.Exists(logfolder))
             {
                 if (Tools.LaunchExplorer(logfolder) == false)
                 {
@@ -1536,7 +1542,7 @@ namespace UnityLauncherPro
 
         private void ChkMinimizeToTaskbar_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.minimizeToTaskbar = (bool)chkMinimizeToTaskbar.IsChecked;
             Settings.Default.Save();
@@ -1544,7 +1550,7 @@ namespace UnityLauncherPro
 
         private void ChkRegisterExplorerMenu_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             if ((bool)chkRegisterExplorerMenu.IsChecked)
             {
@@ -1561,7 +1567,7 @@ namespace UnityLauncherPro
 
         private void ChkShowLauncherArgumentsColumn_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.showArgumentsColumn = (bool)chkShowLauncherArgumentsColumn.IsChecked;
             Settings.Default.Save();
@@ -1571,7 +1577,7 @@ namespace UnityLauncherPro
 
         private void ChkShowGitBranchColumn_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.showGitBranchColumn = (bool)chkShowGitBranchColumn.IsChecked;
             Settings.Default.Save();
@@ -1581,7 +1587,7 @@ namespace UnityLauncherPro
 
         private void ChkQuitAfterOpen_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.closeAfterProject = (bool)chkQuitAfterOpen.IsChecked;
             Settings.Default.Save();
@@ -1589,7 +1595,7 @@ namespace UnityLauncherPro
 
         private void ChkQuitAfterCommandline_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.closeAfterExplorer = (bool)chkQuitAfterCommandline.IsChecked;
             Settings.Default.Save();
@@ -1641,7 +1647,7 @@ namespace UnityLauncherPro
 
                 // get current arguments, after editing
                 TextBox t = e.EditingElement as TextBox;
-                string newProjectNameString = t.Text.ToString();
+                string newProjectNameString = t.Text;
 
                 // restore read only
                 e.Column.IsReadOnly = true;
@@ -1701,7 +1707,7 @@ namespace UnityLauncherPro
 
                 var write = Tools.SaveCustomProjectData(projectPath, projectNameFile, newProjectNameString);
                 // write success, otherwise keep old name
-                if (write == true)
+                if (write)
                 {
                     gridRecent.CommitEdit(DataGridEditingUnit.Row, true);
                     proj.Title = newProjectNameString;
@@ -1715,7 +1721,7 @@ namespace UnityLauncherPro
             {
                 // get current arguments, after editing
                 TextBox t = e.EditingElement as TextBox;
-                string newcellValue = t.Text.ToString();
+                string newcellValue = t.Text;
 
                 string projSettingsFolder = "ProjectSettings";
 
@@ -1729,7 +1735,7 @@ namespace UnityLauncherPro
                 // save arguments to projectsettings folder
                 string outputFile = Path.Combine(projectPath, projSettingsFolder, launcherArgumentsFile);
 
-                if (string.IsNullOrEmpty(newcellValue.Trim()) == true)
+                if (string.IsNullOrEmpty(newcellValue.Trim()))
                 {
                     // its empty value, so we remove the file (to avoid wasting time reading empty file)
                     if (File.Exists(outputFile))
@@ -1813,7 +1819,7 @@ namespace UnityLauncherPro
 
         private void ChkShowMissingFolderProjects_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.showProjectsMissingFolder = (bool)chkShowMissingFolderProjects.IsChecked;
             Settings.Default.Save();
@@ -1821,7 +1827,7 @@ namespace UnityLauncherPro
 
         private void ChkAllowSingleInstanceOnly_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.AllowSingleInstanceOnly = (bool)chkAllowSingleInstanceOnly.IsChecked;
             Settings.Default.Save();
@@ -1878,15 +1884,15 @@ namespace UnityLauncherPro
             if (string.IsNullOrEmpty(folder) == false)
             {
                 txtRootFolderForNewProjects.Text = folder;
-                Properties.Settings.Default.newProjectsRoot = folder;
-                Properties.Settings.Default.Save();
+                Settings.Default.newProjectsRoot = folder;
+                Settings.Default.Save();
             }
         }
 
         private void TxtRootFolderForNewProjects_TextChanged(object sender, TextChangedEventArgs e)
         {
-            Properties.Settings.Default.newProjectsRoot = txtRootFolderForNewProjects.Text;
-            Properties.Settings.Default.Save();
+            Settings.Default.newProjectsRoot = txtRootFolderForNewProjects.Text;
+            Settings.Default.Save();
         }
 
 
@@ -1913,7 +1919,7 @@ namespace UnityLauncherPro
                 if (Directory.Exists(rootFolder) == false)
                 {
                     tabControl.SelectedIndex = 4;
-                    this.UpdateLayout();
+                    UpdateLayout();
                     txtRootFolderForNewProjects.Focus();
                     return;
                 }
@@ -1953,7 +1959,7 @@ namespace UnityLauncherPro
                 modalWindow.ShowDialog();
                 var results = modalWindow.DialogResult.HasValue && modalWindow.DialogResult.Value;
 
-                if (results == true)
+                if (results)
                 {
                     // TODO check if that folder already exists (automatic naming avoids it, but manual naming could cause it)
                     Console.WriteLine("Create project " + NewProject.newVersion + " : " + rootFolder);
@@ -1991,7 +1997,7 @@ namespace UnityLauncherPro
 
         private void ChkAskNameForQuickProject_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.askNameForQuickProject = (bool)chkAskNameForQuickProject.IsChecked;
             Settings.Default.Save();
@@ -2026,7 +2032,7 @@ namespace UnityLauncherPro
 
         private void ChkShowPlatform_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
 
@@ -2078,7 +2084,7 @@ namespace UnityLauncherPro
             e.CanExecute = true;
         }
 
-        private bool isDirtyCell = false;
+        private bool isDirtyCell;
         private void GridRecent_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
         {
             isDirtyCell = true;
@@ -2101,10 +2107,10 @@ namespace UnityLauncherPro
 
         private void ChkEnableProjectRename_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
-            Properties.Settings.Default.enableProjectRename = (bool)chkEnableProjectRename.IsChecked;
-            Properties.Settings.Default.Save();
+            Settings.Default.enableProjectRename = (bool)chkEnableProjectRename.IsChecked;
+            Settings.Default.Save();
         }
 
         private void MenuItemKillProcess_Click(object sender, RoutedEventArgs e)
@@ -2191,13 +2197,13 @@ namespace UnityLauncherPro
                             var line = sr.ReadLine();
 
                             // get current projectpath
-                            if (gotProjectPath == true)
+                            if (gotProjectPath)
                             {
                                 currentBuildReportProjectPath = line;
                                 gotProjectPath = false;
                             }
 
-                            if (gotOutputPluginsPath == true)
+                            if (gotOutputPluginsPath)
                             {
                                 // get output plugins folder relative path, this might not always work, if there is not copyfiles line in log
                                 string pattern = @"CopyFiles\s+(.+?)/\w+\.\w+$";
@@ -2243,7 +2249,7 @@ namespace UnityLauncherPro
                                 collectRows = true;
 
                                 // category report ends
-                                if (collectRows == true)
+                                if (collectRows)
                                 {
                                     collectStats = false;
                                 }
@@ -2290,7 +2296,7 @@ namespace UnityLauncherPro
                                     // get streamingassets folder size and add as last item to report, NOTE need to recalculate sizes then?
                                     string streamingAssetPath = Path.Combine(currentBuildReportProjectPath, "Assets", "StreamingAssets");
                                     var streamingAssetFolderSize = Tools.GetFolderSizeInBytes(streamingAssetPath);
-                                    singleReport.Stats.Insert(singleReport.Stats.Count - 1, new BuildReportItem() { Category = "StreamingAssets", Size = Tools.GetBytesReadable(streamingAssetFolderSize) });
+                                    singleReport.Stats.Insert(singleReport.Stats.Count - 1, new BuildReportItem { Category = "StreamingAssets", Size = Tools.GetBytesReadable(streamingAssetFolderSize) });
 
 
                                     // get total Plugins/ folder size from build! (but how to get last build output folder, its not mentioned in editor log (except some lines for CopyFiles/ but are those always there?)
@@ -2300,7 +2306,7 @@ namespace UnityLauncherPro
                                         //Console.WriteLine("Getting output plugins folder size: "+ currentBuildPluginsRelativePath);
                                         string pluginFolder = Path.Combine(currentBuildReportProjectPath, currentBuildPluginsRelativePath);
                                         long totalPluginFolderSize = Tools.GetFolderSizeInBytes(pluginFolder);
-                                        singleReport.Stats.Insert(singleReport.Stats.Count - 1, new BuildReportItem() { Category = "Plugins", Size = Tools.GetBytesReadable(totalPluginFolderSize) });
+                                        singleReport.Stats.Insert(singleReport.Stats.Count - 1, new BuildReportItem { Category = "Plugins", Size = Tools.GetBytesReadable(totalPluginFolderSize) });
                                     }
                                     else // then show plugin folders from project (with * to mark this is not accurate)
                                     {
@@ -2312,7 +2318,7 @@ namespace UnityLauncherPro
                                         {
                                             totalPluginFolderSize += Tools.GetFolderSizeInBytes(pluginFolder);
                                         }
-                                        singleReport.Stats.Insert(singleReport.Stats.Count - 1, new BuildReportItem() { Category = "Plugins *in proj!", Size = Tools.GetBytesReadable(totalPluginFolderSize) });
+                                        singleReport.Stats.Insert(singleReport.Stats.Count - 1, new BuildReportItem { Category = "Plugins *in proj!", Size = Tools.GetBytesReadable(totalPluginFolderSize) });
                                     }
 
                                 }
@@ -2331,7 +2337,7 @@ namespace UnityLauncherPro
                             }
 
                             // build report ends for rows
-                            if (collectRows == true && line.IndexOf("-------------------------------------------------------------------------------") == 0)
+                            if (collectRows && line.IndexOf("-------------------------------------------------------------------------------") == 0)
                             {
                                 collectRows = false;
                                 collectedBuildTime = false;
@@ -2339,7 +2345,7 @@ namespace UnityLauncherPro
                             }
 
                             // parse and add this line to current build report
-                            if (collectRows == true)
+                            if (collectRows)
                             {
                                 var line2 = line.Trim();
                                 // get tab after kb
@@ -2363,7 +2369,7 @@ namespace UnityLauncherPro
                                 singleReport.Items.Add(r);
                             }
 
-                            if (collectStats == true)
+                            if (collectStats)
                             {
 
                                 //if (hasTimeStamps) 
@@ -2506,15 +2512,15 @@ namespace UnityLauncherPro
 
         private void TxtWebglRelativePath_TextChanged(object sender, TextChangedEventArgs e)
         {
-            Properties.Settings.Default.webglBuildPath = txtWebglRelativePath.Text;
-            Properties.Settings.Default.Save();
+            Settings.Default.webglBuildPath = txtWebglRelativePath.Text;
+            Settings.Default.Save();
         }
 
         private void MenuItemBrowsePersistentDataPath_Click(object sender, RoutedEventArgs e)
         {
             var proj = GetSelectedProject();
             var projPath = proj?.Path.Replace('/', '\\');
-            if (string.IsNullOrEmpty(projPath) == true) return;
+            if (string.IsNullOrEmpty(projPath)) return;
 
             var psPath = Path.Combine(projPath, "ProjectSettings", "ProjectSettings.asset");
             if (File.Exists(psPath) == false) return;
@@ -2546,7 +2552,7 @@ namespace UnityLauncherPro
 
             themeFile = "Themes/" + themeFile;
 
-            if (File.Exists(themeFile) == true)
+            if (File.Exists(themeFile))
             {
                 var colors = File.ReadAllLines(themeFile);
 
@@ -2593,7 +2599,7 @@ namespace UnityLauncherPro
 
         private void ChkUseCustomTheme_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
             Settings.Default.useCustomTheme = isChecked;
@@ -2602,7 +2608,7 @@ namespace UnityLauncherPro
             btnReloadTheme.IsEnabled = isChecked;
 
             // reset colors now
-            if (isChecked == true)
+            if (isChecked)
             {
                 ApplyTheme(txtCustomThemeFile.Text);
             }
@@ -2620,8 +2626,8 @@ namespace UnityLauncherPro
         private void TxtCustomThemeFile_LostFocus(object sender, RoutedEventArgs e)
         {
             var s = (TextBox)sender;
-            Properties.Settings.Default.themeFile = s.Text;
-            Properties.Settings.Default.Save();
+            Settings.Default.themeFile = s.Text;
+            Settings.Default.Save();
         }
 
         private void TxtCustomThemeFile_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -2629,8 +2635,8 @@ namespace UnityLauncherPro
             switch (e.Key)
             {
                 case Key.Return: // pressed enter in theme file text box
-                    Properties.Settings.Default.themeFile = txtCustomThemeFile.Text;
-                    Properties.Settings.Default.Save();
+                    Settings.Default.themeFile = txtCustomThemeFile.Text;
+                    Settings.Default.Save();
                     btnReloadTheme.Focus();
                     break;
             }
@@ -2647,7 +2653,7 @@ namespace UnityLauncherPro
 
         private void ChkEnablePlatformSelection_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
             Settings.Default.enablePlatformSelection = isChecked;
@@ -2674,7 +2680,7 @@ namespace UnityLauncherPro
 
         private void ChkRunAutomatically_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
             Settings.Default.runAutomatically = isChecked;
@@ -2686,12 +2692,12 @@ namespace UnityLauncherPro
 
         private void ChkUseCustomLastModified_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
             chkUseCustomLastModified.IsChecked = isChecked;
-            Properties.Settings.Default.useCustomLastModified = isChecked;
-            Properties.Settings.Default.Save();
+            Settings.Default.useCustomLastModified = isChecked;
+            Settings.Default.Save();
 
             if (isChecked)
             {
@@ -2705,14 +2711,14 @@ namespace UnityLauncherPro
 
         private void TxtCustomDateTimeFormat_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
             TextBox textBox = sender as TextBox;
             ValidateCustomDateFormat(textBox.Text);
         }
 
         private void TxtCustomDateTimeFormat_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
             TextBox textBox = sender as TextBox;
             ValidateCustomDateFormat(textBox.Text);
         }
@@ -2722,14 +2728,14 @@ namespace UnityLauncherPro
             if (Tools.ValidateDateFormat(format))
             {
                 currentDateFormat = format;
-                Properties.Settings.Default.customDateFormat = currentDateFormat;
-                Properties.Settings.Default.Save();
-                txtCustomDateTimeFormat.BorderBrush = System.Windows.Media.Brushes.Transparent;
+                Settings.Default.customDateFormat = currentDateFormat;
+                Settings.Default.Save();
+                txtCustomDateTimeFormat.BorderBrush = Brushes.Transparent;
             }
             else // invalid format
             {
                 //txtCustomDateTimeFormat.Foreground = System.Windows.Media.Brushes.Red;
-                txtCustomDateTimeFormat.BorderBrush = System.Windows.Media.Brushes.Red;
+                txtCustomDateTimeFormat.BorderBrush = Brushes.Red;
                 currentDateFormat = defaultDateFormat;
             }
         }
@@ -2737,16 +2743,16 @@ namespace UnityLauncherPro
         private void ValidateFolderFromTextbox(TextBox textBox)
         {
             //Console.WriteLine(textBox.Text);
-            if (Directory.Exists(textBox.Text) == true)
+            if (Directory.Exists(textBox.Text))
             {
                 // NOTE this saves for shortcutbat setting, so cannot be used for another fields
-                Properties.Settings.Default.shortcutBatchFileFolder = textBox.Text;
-                Properties.Settings.Default.Save();
-                textBox.BorderBrush = System.Windows.Media.Brushes.Transparent;
+                Settings.Default.shortcutBatchFileFolder = textBox.Text;
+                Settings.Default.Save();
+                textBox.BorderBrush = Brushes.Transparent;
             }
             else // invalid format
             {
-                textBox.BorderBrush = System.Windows.Media.Brushes.Red;
+                textBox.BorderBrush = Brushes.Red;
             }
         }
 
@@ -2760,26 +2766,24 @@ namespace UnityLauncherPro
                     textBox.BorderBrush = null;
                     return true;
                 }
-                else
-                {
-                    textBox.BorderBrush = System.Windows.Media.Brushes.Red;
-                }
+
+                textBox.BorderBrush = Brushes.Red;
             }
             else
             {
-                textBox.BorderBrush = System.Windows.Media.Brushes.Red;
+                textBox.BorderBrush = Brushes.Red;
             }
             return false;
         }
 
         private void ChkHumanFriendlyDateTime_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
 
             // cannot have both date formats
-            if (isChecked == true)
+            if (isChecked)
             {
                 if (chkUseCustomLastModified.IsChecked == true) chkUseCustomLastModified.IsChecked = false;
             }
@@ -2790,21 +2794,21 @@ namespace UnityLauncherPro
 
             useHumanFriendlyDateFormat = isChecked;
 
-            Properties.Settings.Default.useHumandFriendlyLastModified = isChecked;
-            Properties.Settings.Default.Save();
+            Settings.Default.useHumandFriendlyLastModified = isChecked;
+            Settings.Default.Save();
         }
 
         private void GridRecent_ColumnReordered(object sender, DataGridColumnEventArgs e)
         {
             // if amount has changed, need to reset array
-            if (Properties.Settings.Default.recentColumnsOrder.Length != gridRecent.Columns.Count) Properties.Settings.Default.recentColumnsOrder = new Int32[gridRecent.Columns.Count];
+            if (Settings.Default.recentColumnsOrder.Length != gridRecent.Columns.Count) Settings.Default.recentColumnsOrder = new Int32[gridRecent.Columns.Count];
 
             // get new display indexes
             for (int i = 0; i < gridRecent.Columns.Count; i++)
             {
-                Properties.Settings.Default.recentColumnsOrder[i] = gridRecent.Columns[i].DisplayIndex;
+                Settings.Default.recentColumnsOrder[i] = gridRecent.Columns[i].DisplayIndex;
             }
-            Properties.Settings.Default.Save();
+            Settings.Default.Save();
         }
 
         private void MenuItemExploreBuildItem_Click(object sender, RoutedEventArgs e)
@@ -2830,7 +2834,7 @@ namespace UnityLauncherPro
 
         private void ChkRunAutomaticallyMinimized_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
 
@@ -2867,8 +2871,6 @@ namespace UnityLauncherPro
                 case Key.Down:
                     Tools.SetFocusToGrid(gridBuildReport);
                     break;
-                default:
-                    break;
             }
         }
 
@@ -2879,17 +2881,17 @@ namespace UnityLauncherPro
 
         private void TxtLogCatArgs_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
-            Properties.Settings.Default.adbLogCatArgs = txtLogCatArgs.Text;
-            Properties.Settings.Default.Save();
+            if (IsActive == false) return; // dont run code on window init
+            Settings.Default.adbLogCatArgs = txtLogCatArgs.Text;
+            Settings.Default.Save();
             adbLogCatArgs = txtLogCatArgs.Text;
         }
 
         private void BtnResetLogCatArgs_Click(object sender, RoutedEventArgs e)
         {
             adbLogCatArgs = defaultAdbLogCatArgs;
-            Properties.Settings.Default.adbLogCatArgs = defaultAdbLogCatArgs;
-            Properties.Settings.Default.Save();
+            Settings.Default.adbLogCatArgs = defaultAdbLogCatArgs;
+            Settings.Default.Save();
             txtLogCatArgs.Text = defaultAdbLogCatArgs;
         }
 
@@ -2938,20 +2940,20 @@ namespace UnityLauncherPro
         private void RadioProjNameFolder_Checked(object sender, RoutedEventArgs e)
         {
             projectNameSetting = 0; // default, folder
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
             RefreshRecentProjects();
         }
 
         private void RadioProjNameProductName_Checked(object sender, RoutedEventArgs e)
         {
             projectNameSetting = 1; // player settings, product name
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
             RefreshRecentProjects();
         }
 
         private void BtnThemeEditor_Click(object sender, RoutedEventArgs e)
         {
-            if (themeEditorWindow != null && themeEditorWindow.IsVisible == true)
+            if (themeEditorWindow != null && themeEditorWindow.IsVisible)
             {
                 themeEditorWindow.Activate();
                 return;
@@ -3009,7 +3011,7 @@ namespace UnityLauncherPro
 
         private void ChkSearchProjectPath_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
 
@@ -3047,7 +3049,7 @@ namespace UnityLauncherPro
 
         private void ChkCheckPlasticBranch_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             Settings.Default.checkPlasticBranch = (bool)chkCheckPlasticBranch.IsChecked;
             Settings.Default.Save();
@@ -3087,8 +3089,8 @@ namespace UnityLauncherPro
             if (string.IsNullOrEmpty(folder) == false)
             {
                 txtShortcutBatchFileFolder.Text = folder;
-                Properties.Settings.Default.shortcutBatchFileFolder = folder;
-                Properties.Settings.Default.Save();
+                Settings.Default.shortcutBatchFileFolder = folder;
+                Settings.Default.Save();
             }
         }
 
@@ -3170,7 +3172,7 @@ namespace UnityLauncherPro
                         if (((Updates)a).ReleaseDate == null && ((Updates)b).ReleaseDate == null) return 0;
                         if (((Updates)a).ReleaseDate == null) return direction == ListSortDirection.Ascending ? -1 : 1;
                         if (((Updates)b).ReleaseDate == null) return direction == ListSortDirection.Ascending ? 1 : -1;
-                        return direction == ListSortDirection.Ascending ? ((DateTime)((Updates)a).ReleaseDate).CompareTo(((Updates)b).ReleaseDate) : ((DateTime)((Updates)b).ReleaseDate).CompareTo(((Updates)a).ReleaseDate);
+                        return direction == ListSortDirection.Ascending ? ((Updates)a).ReleaseDate.CompareTo(((Updates)b).ReleaseDate) : ((Updates)b).ReleaseDate.CompareTo(((Updates)a).ReleaseDate);
                     default:
                         return 0;
                 }
@@ -3316,7 +3318,7 @@ namespace UnityLauncherPro
 
         private void chkUseInitScript_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var isChecked = (bool)((CheckBox)sender).IsChecked;
             Settings.Default.useInitScript = isChecked;
@@ -3333,7 +3335,7 @@ namespace UnityLauncherPro
             txtStatus.Text = msg;
         }
 
-        public void SetBuildStatus(System.Windows.Media.Color color)
+        public void SetBuildStatus(Color color)
         {
             btnBuildStatus.Foreground = new SolidColorBrush(color);
         }
@@ -3346,7 +3348,7 @@ namespace UnityLauncherPro
             var result = MessageBox.Show("This will modify current " + configFile + " file. Are you sure you want to continue? (This cannot be undone, we dont know which 'manual:'-value was already set to 'false' (but it shouldnt break anything))", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
-                if (File.Exists(configFile) == true)
+                if (File.Exists(configFile))
                 {
                     // read the config file
                     var json = File.ReadAllText(configFile);
@@ -3407,7 +3409,7 @@ namespace UnityLauncherPro
 
             // get package name from ProjectSettings.asset
             var psPath = Path.Combine(proj.Path, "ProjectSettings", "ProjectSettings.asset");
-            if (File.Exists(psPath) == true)
+            if (File.Exists(psPath))
             {
                 // read project settings
                 var rows = File.ReadAllLines(psPath);
@@ -3445,15 +3447,15 @@ namespace UnityLauncherPro
 
         private void txtWebglPort_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (isInitializing == true) return;
+            if (isInitializing) return;
 
             var ok = ValidateIntRange((TextBox)sender, 50000, 65534);
             if (ok)
             {
                 var num = int.Parse(((TextBox)sender).Text);
                 webglPort = num;
-                Properties.Settings.Default.webglPort = num;
-                Properties.Settings.Default.Save();
+                Settings.Default.webglPort = num;
+                Settings.Default.Save();
                 SetStatus("WebGL port set to " + num);
             }
         }
@@ -3466,8 +3468,8 @@ namespace UnityLauncherPro
             {
                 var num = int.Parse(((TextBox)sender).Text);
                 webglPort = num;
-                Properties.Settings.Default.webglPort = num;
-                Properties.Settings.Default.Save();
+                Settings.Default.webglPort = num;
+                Settings.Default.Save();
                 SetStatus("WebGL port set to " + num);
             }
         }
@@ -3475,20 +3477,20 @@ namespace UnityLauncherPro
         private void Button_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // only can do restore here, we dont want accidental maximize (max window not really needed)
-            if (this.WindowState == WindowState.Maximized) this.WindowState = WindowState.Normal;
+            if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;
             // NOTE workaround for grid not focused when coming back from minimized window
             Tools.SetFocusToGrid(gridRecent, gridRecent.SelectedIndex);
         }
 
         private void chkOverride40ProjectCount_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
-            Properties.Settings.Default.override40ProjectCount = (bool)((CheckBox)sender).IsChecked;
-            Properties.Settings.Default.Save();
+            Settings.Default.override40ProjectCount = (bool)((CheckBox)sender).IsChecked;
+            Settings.Default.Save();
             if ((bool)chkOverride40ProjectCount.IsChecked)
             {
-                maxProjectCount = Properties.Settings.Default.maxProjectCount;
+                maxProjectCount = Settings.Default.maxProjectCount;
             }
             else
             {
@@ -3498,7 +3500,7 @@ namespace UnityLauncherPro
 
         private void txtMaxProjectCount_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             var ok = ValidateIntRange((TextBox)sender, 10, 1024);
             maxProjectCount = 40;
@@ -3506,15 +3508,15 @@ namespace UnityLauncherPro
             {
                 var num = int.Parse(((TextBox)sender).Text);
                 maxProjectCount = num;
-                Properties.Settings.Default.maxProjectCount = num;
-                Properties.Settings.Default.Save();
+                Settings.Default.maxProjectCount = num;
+                Settings.Default.Save();
                 SetStatus("Max project count set to " + num);
             }
         }
 
         private void txtMaxProjectCount_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
 
             // TODO remove duplicate code
             var ok = ValidateIntRange((TextBox)sender, 10, 1024);
@@ -3523,15 +3525,15 @@ namespace UnityLauncherPro
             {
                 var num = int.Parse(((TextBox)sender).Text);
                 maxProjectCount = num;
-                Properties.Settings.Default.maxProjectCount = num;
-                Properties.Settings.Default.Save();
+                Settings.Default.maxProjectCount = num;
+                Settings.Default.Save();
                 SetStatus("Max project count set to " + num);
             }
         }
 
         private void rdoAll_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsActive == false) return; // dont run code on window init
+            if (IsActive == false) return; // dont run code on window init
             FilterUpdates();
         }
 
@@ -3623,7 +3625,7 @@ namespace UnityLauncherPro
             {
                 var logfolder = Tools.GetEditorLogsFolder();
                 var logFile = Path.Combine(logfolder, "Editor.log");
-                if (File.Exists(logFile) == true) Tools.LaunchExe(logFile);
+                if (File.Exists(logFile)) Tools.LaunchExe(logFile);
             }
         }
 

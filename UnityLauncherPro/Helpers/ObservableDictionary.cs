@@ -1,4 +1,5 @@
 ﻿// Licensed by Daniel Cazzulino under the MIT License : https://gist.github.com/kzu/cfe3cb6e4fe3efea6d24
+
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -193,7 +194,7 @@ namespace UnityLauncherPro.Helpers
 
         void ICollection<KeyValuePair<TKey, TValue>>.Clear()
         {
-            ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).Clear();
+            dictionary.Clear();
 
             CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             PropertyChanged(this, new PropertyChangedEventArgs("Count"));
@@ -203,22 +204,22 @@ namespace UnityLauncherPro.Helpers
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
         {
-            return ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).Contains(item);
+            return dictionary.Contains(item);
         }
 
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).CopyTo(array, arrayIndex);
+            dictionary.CopyTo(array, arrayIndex);
         }
 
         int ICollection<KeyValuePair<TKey, TValue>>.Count
         {
-            get { return ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).Count; }
+            get { return dictionary.Count; }
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
         {
-            get { return ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).IsReadOnly; }
+            get { return dictionary.IsReadOnly; }
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
@@ -232,12 +233,12 @@ namespace UnityLauncherPro.Helpers
 
         IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
         {
-            return ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).GetEnumerator();
+            return dictionary.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).GetEnumerator();
+            return dictionary.GetEnumerator();
         }
 
         #endregion

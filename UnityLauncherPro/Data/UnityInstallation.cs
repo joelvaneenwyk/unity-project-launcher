@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Windows.Data;
 
 namespace UnityLauncherPro
@@ -19,14 +20,14 @@ namespace UnityLauncherPro
         public string ReleaseType { set; get; } // Alpha, Beta, LTS.. TODO could be enum
 
         // https://stackoverflow.com/a/5551986/5452781
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             string version = value as string;
             if (string.IsNullOrEmpty(version)) return null;
             return MainWindow.unityInstalledVersions.ContainsKey(version);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotSupportedException();
         }

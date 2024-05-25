@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,7 +12,7 @@ namespace UnityLauncherPro
     /// </summary>
     public partial class UpgradeWindow : Window
     {
-        public static string upgradeVersion = null;
+        public static string upgradeVersion;
 
         public UpgradeWindow(string currentVersion, string projectPath, string commandLineArguments = null)
         {
@@ -68,7 +67,7 @@ namespace UnityLauncherPro
                 if (string.IsNullOrEmpty(MainWindow.preferredVersion) == false)
                 {
                     // get correct row for preferred version
-                    var obj = Tools.GetEntry(MainWindow.unityInstalledVersions, MainWindow.preferredVersion);
+                    var obj = MainWindow.unityInstalledVersions.GetEntry(MainWindow.preferredVersion);
                     int index = gridAvailableVersions.Items.IndexOf(obj);
                     if (index > -1)
                     {
@@ -132,7 +131,7 @@ namespace UnityLauncherPro
             }
         }
 
-        private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             // override Enter for datagrid
             if (e.Key == Key.Return && e.KeyboardDevice.Modifiers == ModifierKeys.None)
@@ -143,16 +142,13 @@ namespace UnityLauncherPro
                 DialogResult = true;
                 return;
             }
-            else // other keys
+
+            // other keys
+            switch (e.Key)
             {
-                switch (e.Key)
-                {
-                    case Key.Escape:
-                        DialogResult = false;
-                        break;
-                    default:
-                        break;
-                }
+                case Key.Escape:
+                    DialogResult = false;
+                    break;
             }
 
             base.OnKeyDown(e);

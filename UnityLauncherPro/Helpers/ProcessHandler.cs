@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -29,10 +28,10 @@ namespace UnityLauncherPro.Helpers
             }
 
             // subscribe to process exit here, so that can update proj details row (if it was changed in Unity)
-            proc.Exited += (object o, EventArgs ea) =>
+            proc.Exited += (o, ea) =>
             {
                 // call method in mainwindow, to easy access for sourcedata and grid
-                Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, (Action)delegate ()
+                Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, (Action)delegate
                 {
                     MainWindow wnd = (MainWindow)Application.Current.MainWindow;
                     wnd.ProcessExitedCallBack(proj);

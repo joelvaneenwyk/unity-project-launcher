@@ -109,13 +109,13 @@ namespace TarLib
                     // rename output path from "package/ProjectData~/Assets/" into "Assets/"
                     output = output.Replace("package/ProjectData~/", "");
 
-                    if (include == true && !Directory.Exists(Path.GetDirectoryName(output))) Directory.CreateDirectory(Path.GetDirectoryName(output));
+                    if (include && !Directory.Exists(Path.GetDirectoryName(output))) Directory.CreateDirectory(Path.GetDirectoryName(output));
 
                     // not folder
                     //if (name.Equals("./", StringComparison.InvariantCulture) == false)
                     if (name.EndsWith("/") == false) //Directories are zero size and don't need anything written
                     {
-                        if (include == true)
+                        if (include)
                         {
                             //Console.WriteLine("output=" + output);
                             using (var str = File.Open(output, FileMode.OpenOrCreate, FileAccess.ReadWrite))

@@ -5,23 +5,24 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using UnityLauncherPro.Properties;
 
 namespace UnityLauncherPro
 {
     public partial class NewProject : Window
     {
-        public static string newProjectName = null;
-        public static string newVersion = null;
-        public static string newName = null;
-        public static string templateZipPath = null;
-        public static string selectedPlatform = null;
-        public static string[] platformsForThisUnity = null;
+        public static string newProjectName;
+        public static string newVersion;
+        public static string newName;
+        public static string templateZipPath;
+        public static string selectedPlatform;
+        public static string[] platformsForThisUnity;
 
         private bool isInitializing = true; // to keep OnChangeEvent from firing too early
         private int previousSelectedTemplateIndex = -1;
         private int previousSelectedModuleIndex = -1;
 
-        private static string targetFolder = null;
+        private static string targetFolder;
 
         public NewProject(string unityVersion, string suggestedName, string targetFolder, bool nameIsLocked = false)
         {
@@ -46,7 +47,7 @@ namespace UnityLauncherPro
             }
             
             // we have that version installed
-            if (MainWindow.unityInstalledVersions.ContainsKey(unityVersion) == true)
+            if (MainWindow.unityInstalledVersions.ContainsKey(unityVersion))
             {
                 // find this unity version, TODO theres probably easier way than looping all
                 for (int i = 0; i < MainWindow.unityInstallationsSource.Count; i++)
@@ -93,7 +94,7 @@ namespace UnityLauncherPro
             platformsForThisUnity = Tools.GetPlatformsForUnityVersion(version);
             cmbNewProjectPlatform.ItemsSource = platformsForThisUnity;
 
-            var lastUsedPlatform = Properties.Settings.Default.newProjectPlatform;
+            var lastUsedPlatform = Settings.Default.newProjectPlatform;
 
             for (int i = 0; i < platformsForThisUnity.Length; i++)
             {
@@ -128,9 +129,9 @@ namespace UnityLauncherPro
         {
             // check if projectname already exists (only if should be automatically created name)
             var targetPath = Path.Combine(targetFolder, txtNewProjectName.Text);
-            if (txtNewProjectName.IsEnabled == true && Directory.Exists(targetPath) == true)
+            if (txtNewProjectName.IsEnabled && Directory.Exists(targetPath))
             {
-                System.Console.WriteLine("Project already exists");
+                Console.WriteLine("Project already exists");
                 return;
             }
 
@@ -140,8 +141,8 @@ namespace UnityLauncherPro
             UpdateSelectedVersion();
 
             // save last used value for platform
-            Properties.Settings.Default.newProjectPlatform = cmbNewProjectPlatform.SelectedValue.ToString();
-            Properties.Settings.Default.Save();
+            Settings.Default.newProjectPlatform = cmbNewProjectPlatform.SelectedValue.ToString();
+            Settings.Default.Save();
 
             DialogResult = true;
         }
@@ -200,8 +201,6 @@ namespace UnityLauncherPro
                     DialogResult = false;
                     e.Handled = true;
                     break;
-                default:
-                    break;
             }
         }
 
@@ -216,7 +215,7 @@ namespace UnityLauncherPro
 
         private void TxtNewProjectName_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (isInitializing == true) return;
+            if (isInitializing) return;
 
             // warning yellow if contains space at start or end
             if (txtNewProjectName.Text.StartsWith(" ") || txtNewProjectName.Text.EndsWith(" "))
@@ -236,9 +235,9 @@ namespace UnityLauncherPro
 
             // validate new projectname that it doesnt exists already
             var targetPath = Path.Combine(targetFolder, txtNewProjectName.Text);
-            if (Directory.Exists(targetPath) == true)
+            if (Directory.Exists(targetPath))
             {
-                System.Console.WriteLine("Project already exists");
+                Console.WriteLine("Project already exists");
                 txtNewProjectName.BorderBrush = Brushes.Red; // not visible if focused
                 txtNewProjectName.ToolTip = "Project folder already exists";
                 btnCreateNewProject.IsEnabled = false;
@@ -265,8 +264,6 @@ namespace UnityLauncherPro
                 case Key.Down:
                     Tools.SetFocusToGrid(gridAvailableVersions);
                     break;
-                default:
-                    break;
             }
         }
 
@@ -279,12 +276,12 @@ namespace UnityLauncherPro
         // FIXME this gets called when list is updated?
         private void GridAvailableVersions_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (gridAvailableVersions.SelectedItem == null || isInitializing == true) return;
+            if (gridAvailableVersions.SelectedItem == null || isInitializing) return;
             // new row selected, generate new project name for this version
             var k = gridAvailableVersions.SelectedItem as UnityInstallation;
             newVersion = k.Version;
             // no new name, if field is locked (because its folder name then)
-            if (txtNewProjectName.IsEnabled == true) GenerateNewName();
+            if (txtNewProjectName.IsEnabled) GenerateNewName();
 
             // update templates list for selected unity version
             UpdateTemplatesDropDown(k.Path);
@@ -302,13 +299,13 @@ namespace UnityLauncherPro
             row.FontWeight = FontWeights.Bold;
         }
 
-        private void CmbNewProjectTemplate_DropDownOpened(object sender, System.EventArgs e)
+        private void CmbNewProjectTemplate_DropDownOpened(object sender, EventArgs e)
         {
             // on open, take current selection, so can undo later
             previousSelectedTemplateIndex = cmbNewProjectTemplate.SelectedIndex;
         }
 
-        private void CmbNewProjectPlatform_DropDownOpened(object sender, System.EventArgs e)
+        private void CmbNewProjectPlatform_DropDownOpened(object sender, EventArgs e)
         {
             previousSelectedModuleIndex = cmbNewProjectPlatform.SelectedIndex;
         }

@@ -1,16 +1,17 @@
-using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Text;
+using Microsoft.Win32;
+using UnityLauncherPro.Properties;
 
 namespace UnityLauncherPro
 {
     public static class GetProjects
     {
         // which registries we want to scan for projects
-        private static readonly string[] registryPathsToCheck = new string[] { @"SOFTWARE\Unity Technologies\Unity Editor 5.x", @"SOFTWARE\Unity Technologies\Unity Editor 4.x" };
+        private static readonly string[] registryPathsToCheck = { @"SOFTWARE\Unity Technologies\Unity Editor 5.x", @"SOFTWARE\Unity Technologies\Unity Editor 4.x" };
 
         // convert target platform name into valid buildtarget platform name, NOTE this depends on unity version, now only 2019 and later are supported
         public static Dictionary<string, string> remapPlatformNames = new Dictionary<string, string> { { "StandaloneWindows64", "Win64" }, { "StandaloneWindows", "Win" }, { "Android", "Android" }, { "WebGL", "WebGL" } };
@@ -30,11 +31,8 @@ namespace UnityLauncherPro
                 {
                     continue;
                 }
-                else
-                {
-                    //Console.WriteLine("Null registry key at " + registryPathsToCheck[i]);
-                }
 
+                //Console.WriteLine("Null registry key at " + registryPathsToCheck[i]);
                 // parse recent project path
                 foreach (var valueName in key.GetValueNames())
                 {
@@ -157,25 +155,25 @@ namespace UnityLauncherPro
 
             // get custom launch arguments, only if column in enabled
             string customArgs = "";
-            if (getArguments == true)
+            if (getArguments)
             {
                 customArgs = folderExists ? Tools.ReadCustomProjectData(projectPath, MainWindow.launcherArgumentsFile) : null;
             }
 
             // get git branchinfo, only if column in enabled
             string gitBranch = "";
-            if (getGitBranch == true)
+            if (getGitBranch)
             {
                 gitBranch = folderExists ? Tools.ReadGitBranchInfo(projectPath) : null;
                 // check for plastic, if enabled
-                if (getPlasticBranch == true && gitBranch == null)
+                if (getPlasticBranch && gitBranch == null)
                 {
                     gitBranch = folderExists ? Tools.ReadPlasticBranchInfo(projectPath) : null;
                 }
             }
 
             string targetPlatform = null;
-            if (showTargetPlatform == true)
+            if (showTargetPlatform)
             {
                 targetPlatform = folderExists ? Tools.GetTargetPlatform(projectPath) : null;
                 //if (projectPath.Contains("Shader")) Console.WriteLine(projectPath + " targetPlatform=" + targetPlatform);
@@ -228,11 +226,8 @@ namespace UnityLauncherPro
                 {
                     continue;
                 }
-                else
-                {
-                    //Console.WriteLine("Null registry key at " + registryPathsToCheck[i]);
-                }
 
+                //Console.WriteLine("Null registry key at " + registryPathsToCheck[i]);
                 // parse recent project paths
                 foreach (var valueName in key.GetValueNames())
                 {
@@ -269,10 +264,10 @@ namespace UnityLauncherPro
 
         jumpCustomHistory:
             // check if its in our custom list, NOTE should only do if custom list is enabled
-            if (Properties.Settings.Default.projectPaths.Contains(projectPathToRemove))
+            if (Settings.Default.projectPaths.Contains(projectPathToRemove))
             {
-                Properties.Settings.Default.projectPaths.Remove(projectPathToRemove);
-                Properties.Settings.Default.Save();
+                Settings.Default.projectPaths.Remove(projectPathToRemove);
+                Settings.Default.Save();
                 Console.WriteLine("Deleted recent history item: " + projectPathToRemove + " from custom list");
                 //return true;
                 result = true;

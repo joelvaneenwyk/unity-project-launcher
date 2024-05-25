@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityLauncherPro.Properties;
 
 namespace UnityLauncherPro
 {
@@ -16,7 +17,7 @@ namespace UnityLauncherPro
         public static List<UnityInstallation> Scan()
         {
             // get list from settings
-            var rootFolders = Properties.Settings.Default.rootFolders;
+            var rootFolders = Settings.Default.rootFolders;
 
             // unityversion, exe_path
             List<UnityInstallation> results = new List<UnityInstallation>();
@@ -25,7 +26,7 @@ namespace UnityLauncherPro
             foreach (string rootFolder in rootFolders)
             {
                 // if folder exists
-                if (String.IsNullOrWhiteSpace(rootFolder) == true || Directory.Exists(rootFolder) == false) continue;
+                if (String.IsNullOrWhiteSpace(rootFolder) || Directory.Exists(rootFolder) == false) continue;
 
                 // get all folders
                 var directories = Directory.GetDirectories(rootFolder);
@@ -92,7 +93,7 @@ namespace UnityLauncherPro
                     if (platforms != null) unity.Platforms = platforms;
 
                     // add to list, if not there yet NOTE should notify that there are 2 same versions..? this might happen with preview builds..
-                    if (results.Contains(unity) == true)
+                    if (results.Contains(unity))
                     {
                         Console.WriteLine("Warning: 2 same versions found for " + version);
                         continue;

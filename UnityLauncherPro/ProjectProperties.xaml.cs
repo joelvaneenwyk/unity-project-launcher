@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace UnityLauncherPro
@@ -36,7 +32,7 @@ namespace UnityLauncherPro
 
         }
 
-        private void txtCustomEnvVariables_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void txtCustomEnvVariables_TextChanged(object sender, TextChangedEventArgs e)
         {
             // TODO validate
         }

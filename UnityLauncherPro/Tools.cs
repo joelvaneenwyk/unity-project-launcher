@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -13,7 +12,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
+using TarLib;
 using UnityLauncherPro.Helpers;
+using UnityLauncherPro.Properties;
 
 namespace UnityLauncherPro
 {
@@ -38,15 +40,13 @@ namespace UnityLauncherPro
         // returns last modified date for file (or null if cannot get it)
         public static DateTime? GetLastModifiedTime(string path)
         {
-            if (File.Exists(path) == true || Directory.Exists(path) == true)
+            if (File.Exists(path) || Directory.Exists(path))
             {
                 DateTime modification = File.GetLastWriteTime(path);
                 return modification;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace UnityLauncherPro
             else if (Directory.Exists(Path.Combine(path, "ProjectSettings")))
             {
                 var versionPath = Path.Combine(path, "ProjectSettings", "ProjectVersion.txt");
-                if (File.Exists(versionPath) == true) // 5.x and later
+                if (File.Exists(versionPath)) // 5.x and later
                 {
                     var data = File.ReadAllLines(versionPath);
 
@@ -75,7 +75,7 @@ namespace UnityLauncherPro
                         // check string
                         if (dd.Contains("m_EditorVersion"))
                         {
-                            var t = dd.Split(new string[] { "m_EditorVersion: " }, StringSplitOptions.None);
+                            var t = dd.Split(new[] { "m_EditorVersion: " }, StringSplitOptions.None);
                             if (t != null && t.Length > 0)
                             {
                                 version = t[1].Trim();
@@ -100,7 +100,7 @@ namespace UnityLauncherPro
                 else // maybe its 4.x?
                 {
                     versionPath = Path.Combine(path, "ProjectSettings", "ProjectSettings.asset");
-                    if (File.Exists(versionPath) == true)
+                    if (File.Exists(versionPath))
                     {
                         // first try if its ascii format
                         var data = File.ReadAllLines(versionPath);
@@ -108,7 +108,7 @@ namespace UnityLauncherPro
                         {
                             // check library if available
                             var newVersionPath = Path.Combine(path, "Library", "AnnotationManager");
-                            if (File.Exists(newVersionPath) == true)
+                            if (File.Exists(newVersionPath))
                             {
                                 versionPath = newVersionPath;
                             }
@@ -142,7 +142,7 @@ namespace UnityLauncherPro
         {
             string results = null;
             var versionPath = Path.Combine(projectPath, "ProjectSettings", "ProjectSettings.asset");
-            if (File.Exists(versionPath) == true) // 5.x and later
+            if (File.Exists(versionPath)) // 5.x and later
             {
                 var data = File.ReadAllLines(versionPath);
 
@@ -153,16 +153,14 @@ namespace UnityLauncherPro
                         // check row
                         if (data[i].IndexOf("productName: ") > -1)
                         {
-                            var t = data[i].Split(new string[] { "productName: " }, StringSplitOptions.None);
+                            var t = data[i].Split(new[] { "productName: " }, StringSplitOptions.None);
                             if (t != null && t.Length > 0)
                             {
                                 results = t[1].Trim();
                                 break;
                             }
-                            else
-                            {
-                                throw new InvalidDataException($"invalid productName data:{data}");
-                            }
+
+                            throw new InvalidDataException($"invalid productName data:{data}");
                         }
                     }
                 }
@@ -195,21 +193,21 @@ namespace UnityLauncherPro
             // fix backslashes
             projectPath = projectPath.Replace('\\', '/');
 
-            if (Properties.Settings.Default.projectPaths.Contains(projectPath) == false)
+            if (Settings.Default.projectPaths.Contains(projectPath) == false)
             {
                 // TODO do we need to add as first?
-                Properties.Settings.Default.projectPaths.Insert(0, projectPath);
+                Settings.Default.projectPaths.Insert(0, projectPath);
 
                 // remove last item, if too many
-                if (Properties.Settings.Default.projectPaths.Count > MainWindow.maxProjectCount)
+                if (Settings.Default.projectPaths.Count > MainWindow.maxProjectCount)
                 {
-                    Properties.Settings.Default.projectPaths.RemoveAt(Properties.Settings.Default.projectPaths.Count - 1);
+                    Settings.Default.projectPaths.RemoveAt(Settings.Default.projectPaths.Count - 1);
                 }
 
                 //Console.WriteLine("AddProjectToHistory, count: " + Properties.Settings.Default.projectPaths.Count);
 
                 // TODO no need to save everytime?
-                Properties.Settings.Default.Save();
+                Settings.Default.Save();
 
                 // TODO need to add into recent grid also? if old items disappear?
             }
@@ -235,11 +233,8 @@ namespace UnityLauncherPro
                 BringProcessToFront(ProcessHandler.Get(proj.Path));
                 return null;
             }
-            else
-            {
-                // TODO check lock file?
-            }
 
+            // TODO check lock file?
             // there is no assets path, probably we want to create new project then
             var assetsFolder = Path.Combine(proj.Path, "Assets");
             if (Directory.Exists(assetsFolder) == false)
@@ -250,7 +245,7 @@ namespace UnityLauncherPro
 
             // when opening project, check for crashed backup scene first
             var cancelLaunch = CheckCrashBackupScene(proj.Path);
-            if (cancelLaunch == true)
+            if (cancelLaunch)
             {
                 return null;
             }
@@ -295,7 +290,7 @@ namespace UnityLauncherPro
                     unitycommandlineparameters += $" -buildTarget {projTargetPlatform}";
                 }
 
-                if (useInitScript == true)
+                if (useInitScript)
                 {
                     unitycommandlineparameters += " -executeMethod UnityLauncherProTools.InitializeProject.Init";
                 }
@@ -367,7 +362,7 @@ namespace UnityLauncherPro
                 //newProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden; // needed for unity 2023 for some reason? (otherwise console popups briefly), Cannot use this, whole Editor is invisible then
                 newProcess.Start();
 
-                if (Properties.Settings.Default.closeAfterProject)
+                if (Settings.Default.closeAfterProject)
                 {
                     Environment.Exit(0);
                 }
@@ -399,7 +394,7 @@ namespace UnityLauncherPro
                     {
                         Directory.CreateDirectory(restoreFolder);
                     }
-                    if (Directory.Exists(restoreFolder) == true)
+                    if (Directory.Exists(restoreFolder))
                     {
                         Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
                         var uniqueFileName = $"Recovered_Scene{unixTimestamp}.unity";
@@ -422,7 +417,7 @@ namespace UnityLauncherPro
 
         public static string GetUnityExePath(string version)
         {
-            if (string.IsNullOrEmpty(version) == true) return null;
+            if (string.IsNullOrEmpty(version)) return null;
             return MainWindow.unityInstalledVersions.ContainsKey(version) ? MainWindow.unityInstalledVersions[version] : null;
         }
 
@@ -430,23 +425,22 @@ namespace UnityLauncherPro
         // opens Explorer to target folder
         public static bool LaunchExplorer(string folder)
         {
-            if (Directory.Exists(folder) == true)
+            if (Directory.Exists(folder))
             {
                 Process.Start(folder);
                 return true;
             }
-            else // original folder is missing, try to find parent folder that we can go into
+
+            // original folder is missing, try to find parent folder that we can go into
+            for (int i = folder.Length - 1; i > -1; i--)
             {
-                for (int i = folder.Length - 1; i > -1; i--)
+                // TODO path.separator
+                if (folder[i] == '/')
                 {
-                    // TODO path.separator
-                    if (folder[i] == '/')
+                    if (Directory.Exists(folder.Substring(0, i)))
                     {
-                        if (Directory.Exists(folder.Substring(0, i)))
-                        {
-                            Process.Start($"{folder.Substring(0, i)}/");
-                            break;
-                        }
+                        Process.Start($"{folder.Substring(0, i)}/");
+                        break;
                     }
                 }
             }
@@ -455,24 +449,23 @@ namespace UnityLauncherPro
 
         public static bool LaunchExplorerSelectFile(string fileName)
         {
-            if (File.Exists(fileName) == true)
+            if (File.Exists(fileName))
             {
 
                 fileName = Path.GetFullPath(fileName);
                 Process.Start("explorer.exe", string.Format("/select,\"{0}\"", fileName));
                 return true;
             }
-            else // file is missing, try to find parent folder that we can go into
+
+            // file is missing, try to find parent folder that we can go into
+            for (int i = fileName.Length - 1; i > -1; i--)
             {
-                for (int i = fileName.Length - 1; i > -1; i--)
+                if (fileName[i] == '/')
                 {
-                    if (fileName[i] == '/')
+                    if (Directory.Exists(fileName.Substring(0, i)))
                     {
-                        if (Directory.Exists(fileName.Substring(0, i)))
-                        {
-                            Process.Start($"{fileName.Substring(0, i)}/");
-                            break;
-                        }
+                        Process.Start($"{fileName.Substring(0, i)}/");
+                        break;
                     }
                 }
             }
@@ -519,7 +512,7 @@ namespace UnityLauncherPro
             if (string.IsNullOrEmpty(version)) return null;
 
             string url = "";
-            if (VersionIsArchived(version) == true)
+            if (VersionIsArchived(version))
             {
                 // remove f#, TODO should remove c# from china version ?
                 version = Regex.Replace(version, @"f[0-9]{1,2}", "", RegexOptions.IgnoreCase);
@@ -541,17 +534,17 @@ namespace UnityLauncherPro
                 url = $"https://unity3d.com/unity/{whatsnew}/{padding}{version}";
             }
             else
-            if (VersionIsPatch(version) == true)
+            if (VersionIsPatch(version))
             {
                 url = $"https://unity3d.com/unity/qa/patch-releases/{version}";
             }
             else
-            if (VersionIsBeta(version) == true)
+            if (VersionIsBeta(version))
             {
                 url = $"https://unity3d.com/unity/beta/{version}";
             }
             else
-            if (VersionIsAlpha(version) == true)
+            if (VersionIsAlpha(version))
             {
                 url = $"https://unity3d.com/unity/alpha/{version}";
             }
@@ -593,13 +586,13 @@ namespace UnityLauncherPro
             //var url = Tools.GetUnityReleaseURL(version);
             string url = null;
             bool noAlphaReleaseNotesPage = version.Contains("6000") && !version.Contains("f");
-            if (Properties.Settings.Default.useAlphaReleaseNotes && !noAlphaReleaseNotesPage)
+            if (Settings.Default.useAlphaReleaseNotes && !noAlphaReleaseNotesPage)
             {
                 //with the alpha release notes, we want a diff between the 2 versions, but the site just shows all the changes inclusive of from
                 // so we need to compare the currently selected version to the one right after it that is available (installed or not)
                 
-                var closestVersion = Tools.FindNearestVersion(version, MainWindow.unityInstalledVersions.Keys.ToList(), true);
-                var getNextVersionToClosest = closestVersion == null ? null : Tools.FindNearestVersion(version, MainWindow.updatesAsStrings);
+                var closestVersion = FindNearestVersion(version, MainWindow.unityInstalledVersions.Keys.ToList(), true);
+                var getNextVersionToClosest = closestVersion == null ? null : FindNearestVersion(version, MainWindow.updatesAsStrings);
                 if (getNextVersionToClosest == null) getNextVersionToClosest = version;
 
                 url =
@@ -607,7 +600,7 @@ namespace UnityLauncherPro
             }
             else
             {
-                url = Tools.GetUnityReleaseURL(version);
+                url = GetUnityReleaseURL(version);
             }
             if (string.IsNullOrEmpty(url)) return false;
 
@@ -627,7 +620,7 @@ namespace UnityLauncherPro
 
             //Console.WriteLine("DownloadInBrowser exeURL= '" + exeURL + "'");
 
-            if (string.IsNullOrEmpty(exeURL) == false && exeURL.StartsWith("https") == true)
+            if (string.IsNullOrEmpty(exeURL) == false && exeURL.StartsWith("https"))
             {
                 //SetStatus("Download installer in browser: " + exeURL);
                 Process.Start(exeURL);
@@ -646,20 +639,20 @@ namespace UnityLauncherPro
 
             Console.WriteLine($"download exeURL= ({exeURL})");
 
-            if (string.IsNullOrEmpty(exeURL) == false && exeURL.StartsWith("https") == true)
+            if (string.IsNullOrEmpty(exeURL) == false && exeURL.StartsWith("https"))
             {
                 //SetStatus("Download installer in browser: " + exeURL);
                 // download url file to temp
                 string tempFile = $"{Path.GetTempPath()}UnityDownloadAssistant-{version.Replace(".", "_")}.exe";
                 //Console.WriteLine("download tempFile= (" + tempFile + ")");
-                if (File.Exists(tempFile) == true) File.Delete(tempFile);
+                if (File.Exists(tempFile)) File.Delete(tempFile);
 
                 // TODO make async
-                if (DownloadFile(exeURL, tempFile) == true)
+                if (DownloadFile(exeURL, tempFile))
                 {
                     // get base version, to use for install path
                     // FIXME check if have any paths?
-                    string lastRootFolder = Properties.Settings.Default.rootFolders[Properties.Settings.Default.rootFolders.Count - 1];
+                    string lastRootFolder = Settings.Default.rootFolders[Settings.Default.rootFolders.Count - 1];
                     // check if ends with / or \
                     if (lastRootFolder.EndsWith("/") == false && lastRootFolder.EndsWith("\\") == false) lastRootFolder += "/";
                     string outputVersionFolder = $"{version.Split('.')[0]}_{version.Split('.')[1]}";
@@ -700,10 +693,10 @@ namespace UnityLauncherPro
             string tempFile = Path.Combine(Path.GetTempPath(), currentInitScriptFile);
             bool isLocalFile = false;
 
-            if (string.IsNullOrEmpty(currentInitScriptLocationOrURL) == true) currentInitScriptLocationOrURL = initFileDefaultURL;
+            if (string.IsNullOrEmpty(currentInitScriptLocationOrURL)) currentInitScriptLocationOrURL = initFileDefaultURL;
 
             // check if its URL or local file
-            if (currentInitScriptLocationOrURL.ToLower().StartsWith("http") == true)
+            if (currentInitScriptLocationOrURL.ToLower().StartsWith("http"))
             {
                 // download into temp first
                 if (DownloadFile(currentInitScriptLocationOrURL, tempFile) == false) return;
@@ -718,7 +711,7 @@ namespace UnityLauncherPro
             }
 
             // if got file
-            if (File.Exists(tempFile) == true)
+            if (File.Exists(tempFile))
             {
                 // just in case file is locked
                 try
@@ -742,7 +735,7 @@ namespace UnityLauncherPro
                         if (File.Exists(currentInitScriptFullPath)) File.Delete(currentInitScriptFullPath);
 
                         // local file copy, not move
-                        if (isLocalFile == true)
+                        if (isLocalFile)
                         {
                             File.Copy(tempFile, currentInitScriptFullPath);
                         }
@@ -769,7 +762,7 @@ namespace UnityLauncherPro
 
         private static void DeleteTempFile(string path)
         {
-            if (File.Exists(path) == true)
+            if (File.Exists(path))
             {
                 Console.WriteLine($"DeleteTempFile: {path}");
                 File.Delete(path);
@@ -797,7 +790,7 @@ namespace UnityLauncherPro
 
         public static string DownloadHTML(string url)
         {
-            if (string.IsNullOrEmpty(url) == true) return null;
+            if (string.IsNullOrEmpty(url)) return null;
             using (WebClient client = new WebClient())
             {
                 try
@@ -1121,7 +1114,7 @@ namespace UnityLauncherPro
             modalWindow.ShowDialog();
             var results = modalWindow.DialogResult.HasValue && modalWindow.DialogResult.Value;
 
-            if (results == true)
+            if (results)
             {
                 var upgradeToVersion = UpgradeWindow.upgradeVersion;
                 if (string.IsNullOrEmpty(upgradeToVersion)) return;
@@ -1136,10 +1129,7 @@ namespace UnityLauncherPro
 
                 // TODO update datagrid row for new version
             }
-            else
-            {
-                //Console.WriteLine("results = " + results);
-            }
+            //Console.WriteLine("results = " + results);
         }
 
         /// <summary>
@@ -1193,15 +1183,9 @@ namespace UnityLauncherPro
                     key.DeleteSubKeyTree(appName);
                     //SetStatus("Removed context menu registry items");
                 }
-                else
-                {
-                    //SetStatus("Nothing to uninstall..");
-                }
+                //SetStatus("Nothing to uninstall..");
             }
-            else
-            {
-                //SetStatus("Error> Cannot find registry key: " + contextRegRoot);
-            }
+            //SetStatus("Error> Cannot find registry key: " + contextRegRoot);
         }
 
         /// <summary>
@@ -1281,11 +1265,8 @@ namespace UnityLauncherPro
                     }
                 }
             }
-            else
-            {
-                //Console.WriteLine("Missing csproj, cannot parse target platform: "+ projectPath);
-            }
 
+            //Console.WriteLine("Missing csproj, cannot parse target platform: "+ projectPath);
             return results;
         }
 
@@ -1297,19 +1278,17 @@ namespace UnityLauncherPro
             {
                 return GetProjects.remapPlatformNames[rawPlatformName];
             }
-            else
-            {
-                if (string.IsNullOrEmpty(rawPlatformName) == false) Console.WriteLine(
-                    $"Missing buildTarget remap name for: {rawPlatformName}");
-                return null;
-            }
+
+            if (string.IsNullOrEmpty(rawPlatformName) == false) Console.WriteLine(
+                $"Missing buildTarget remap name for: {rawPlatformName}");
+            return null;
         }
 
         public static string ReadCustomProjectData(string projectPath, string customFile)
         {
             string results = null;
             customFile = Path.Combine(projectPath, "ProjectSettings", customFile);
-            if (File.Exists(customFile) == true)
+            if (File.Exists(customFile))
             {
                 results = string.Join(" ", File.ReadAllLines(customFile));
             }
@@ -1418,7 +1397,7 @@ namespace UnityLauncherPro
         public static Project FastCreateProject(string version, string baseFolder, string projectName = null, string templateZipPath = null, string[] platformsForThisUnity = null, string platform = null, bool useInitScript = false, string initScriptPath = null)
         {
             // check for base folders in settings tab
-            if (string.IsNullOrEmpty(baseFolder) == true)
+            if (string.IsNullOrEmpty(baseFolder))
             {
                 Console.WriteLine("Missing baseFolder value");
                 return null;
@@ -1432,7 +1411,7 @@ namespace UnityLauncherPro
             }
 
             // check selected unity version
-            if (string.IsNullOrEmpty(version) == true)
+            if (string.IsNullOrEmpty(version))
             {
                 Console.WriteLine("Missing unity version string");
                 return null;
@@ -1440,7 +1419,7 @@ namespace UnityLauncherPro
 
             string newPath = null;
             // if we didnt have name yet
-            if (string.IsNullOrEmpty(projectName) == true)
+            if (string.IsNullOrEmpty(projectName))
             {
                 projectName = GetSuggestedProjectName(version, baseFolder);
                 // failed getting new path a-z
@@ -1454,13 +1433,13 @@ namespace UnityLauncherPro
             // unzip template, if any
             if (templateZipPath != null)
             {
-                TarLib.Tar.ExtractTarGz(templateZipPath, newPath);
+                Tar.ExtractTarGz(templateZipPath, newPath);
             }
 
             // copy init file into project
-            if (useInitScript == true)
+            if (useInitScript)
             {
-                if (File.Exists(initScriptPath) == true)
+                if (File.Exists(initScriptPath))
                 {
                     var editorTargetFolder = Path.Combine(baseFolder, projectName, "Assets", "Editor");
                     if (Directory.Exists(editorTargetFolder) == false) Directory.CreateDirectory(editorTargetFolder);
@@ -1552,7 +1531,7 @@ namespace UnityLauncherPro
         public static void SetStartupRegistry(bool state)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-            if (state == true)
+            if (state)
             {
                 rk.SetValue(MainWindow.appName, $"\"{Process.GetCurrentProcess().MainModule.FileName}\"");
             }
@@ -1604,33 +1583,33 @@ namespace UnityLauncherPro
             {
                 return ts.TotalSeconds < 2 ? "Right now" : $"{(int)ts.TotalSeconds} seconds ago";
             }
-            else if (ts.TotalMinutes < 60)
+
+            if (ts.TotalMinutes < 60)
             {
                 return ts.TotalMinutes < 2 ? "1 minute ago" : $"{(int)ts.TotalMinutes} minutes ago";
             }
-            else if (ts.TotalHours < 24)
+
+            if (ts.TotalHours < 24)
             {
                 return ts.TotalHours < 2 ? "1 hour ago" : $"{(int)ts.TotalHours} hours ago";
             }
-            else if (ts.TotalDays < 30)
+
+            if (ts.TotalDays < 30)
             {
                 return ts.TotalDays < 2 ? "1 day ago" : $"{(int)ts.TotalDays} days ago";
             }
-            else if (ts.TotalDays < 365)
+
+            if (ts.TotalDays < 365)
             {
                 if (ts.TotalDays < 60)
                 {
                     return "1 month ago";
                 }
-                else
-                {
-                    return $"{(int)(ts.TotalDays / 30)} months ago";
-                }
+
+                return $"{(int)(ts.TotalDays / 30)} months ago";
             }
-            else
-            {
-                return ts.TotalDays < 730 ? "1 year ago" : $"{(int)(ts.TotalDays / 365)} years ago";
-            }
+
+            return ts.TotalDays < 730 ? "1 year ago" : $"{(int)(ts.TotalDays / 365)} years ago";
         }
 
         public static bool ValidateDateFormat(string format)
@@ -1676,10 +1655,10 @@ namespace UnityLauncherPro
             else // try other files
             {
                 var changeSetFile = Path.Combine(editorFolder, @"Data\PlaybackEngines\windowsstandalonesupport\Source\WindowsPlayer\WindowsPlayer\UnityConfigureRevision.gen.h");
-                if (File.Exists(changeSetFile) == true)
+                if (File.Exists(changeSetFile))
                 {
                     var allText = File.ReadAllText(changeSetFile);
-                    var hashRaw = allText.Split(new string[] { "#define UNITY_VERSION_HASH \"" }, StringSplitOptions.None);
+                    var hashRaw = allText.Split(new[] { "#define UNITY_VERSION_HASH \"" }, StringSplitOptions.None);
                     if (hashRaw.Length > 1)
                     {
                         hash = hashRaw[1].Replace("\"", "");
@@ -1705,9 +1684,9 @@ namespace UnityLauncherPro
         public static void OpenAppdataSpecialFolder(string subfolder)
         {
             var logfolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), subfolder);
-            if (Directory.Exists(logfolder) == true)
+            if (Directory.Exists(logfolder))
             {
-                if (Tools.LaunchExplorer(logfolder) == false)
+                if (LaunchExplorer(logfolder) == false)
                 {
                     Console.WriteLine($"Cannot open folder..{logfolder}");
                 }
@@ -1794,7 +1773,7 @@ public static class UnityLauncherProTools
             // TODO check if write failed
 
             // get selected project unity exe path
-            var unityExePath = Tools.GetUnityExePath(proj.Version);
+            var unityExePath = GetUnityExePath(proj.Version);
             if (unityExePath == null) return;
 
             // create commandline string for building and launch it
@@ -1804,13 +1783,13 @@ public static class UnityLauncherProTools
             Console.WriteLine($"buildcmd= {buildParams}");
 
             // launch build
-            var proc = Tools.LaunchExe(unityExePath, buildParams);
+            var proc = LaunchExe(unityExePath, buildParams);
 
             // wait for process exit then open output folder
             proc.Exited += (o, i) =>
             {
                 Console.WriteLine($"Build process exited: {outputFolder}");
-                Tools.ExploreFolder(outputFolder);
+                ExploreFolder(outputFolder);
                 SetStatus($"Build process finished: {DateTime.Now:HH:mm:ss}");
                 // TODO set color based on results
                 SetBuildStatus(Colors.Green);
@@ -1822,7 +1801,7 @@ public static class UnityLauncherProTools
         public static void LaunchWebGL(Project proj, string relativeFolder)
         {
             var projPath = proj?.Path.Replace('/', '\\');
-            if (string.IsNullOrEmpty(projPath) == true) return;
+            if (string.IsNullOrEmpty(projPath)) return;
 
             var buildPath = Path.Combine(projPath, "Builds", relativeFolder);
             if (Directory.Exists(buildPath) == false) return;
@@ -1858,71 +1837,68 @@ public static class UnityLauncherProTools
                 {
                     Console.WriteLine("this project already has webgl server running.. lets open browser url only");
                     // then open browser url only
-                    Tools.OpenURL($"http://localhost:{port}");
+                    OpenURL($"http://localhost:{port}");
                     return;
 
                 }
+
+                Console.WriteLine($"Port in use, but its different project: {port}");
+                Console.WriteLine($"{webglServerProcesses[port].StartInfo.Arguments} == \"{buildPath}\"");
+
+                // then open new port and process
+                // -----------------------------------------------------------
+                // check if port is available https://stackoverflow.com/a/2793289
+                bool isAvailable = true;
+                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                IPEndPoint[] objEndPoints = ipGlobalProperties.GetActiveTcpListeners();
+
+                // NOTE instead of iterating all ports, just try to open port, if fails, open next one
+                // compare with existing ports, if available
+                for (int i = 0; i < objEndPoints.Length; i++)
+                {
+                    if (objEndPoints[i].Port == port)
+                    {
+                        port++;
+                        if (port > 65534)
+                        {
+                            Console.WriteLine("Failed to find open port..");
+                            isAvailable = false;
+                            return;
+                        }
+                    }
+                }
+
+                Console.WriteLine($"Found available port: {port}");
+
+                if (isAvailable == false)
+                {
+                    Console.WriteLine(
+                        $"failed to open port {port} (should be open already, or something else is using it?)");
+                }
                 else
                 {
-                    Console.WriteLine($"Port in use, but its different project: {port}");
-                    Console.WriteLine($"{webglServerProcesses[port].StartInfo.Arguments} == \"{buildPath}\"");
+                    // take process id from unity, if have it (then webserver closes automatically when unity is closed)
+                    var proc = ProcessHandler.Get(proj.Path);
+                    int pid = proc == null ? -1 : proc.Id;
+                    var param = $"\"{webExe}\" \"{buildPath}\" {port}{(pid == -1 ? "" : $" {pid}")}"; // server exe path, build folder and port
 
-                    // then open new port and process
-                    // -----------------------------------------------------------
-                    // check if port is available https://stackoverflow.com/a/2793289
-                    bool isAvailable = true;
-                    IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-                    IPEndPoint[] objEndPoints = ipGlobalProperties.GetActiveTcpListeners();
+                    var webglServerProcess = LaunchExe(monoExe, param);
 
-                    // NOTE instead of iterating all ports, just try to open port, if fails, open next one
-                    // compare with existing ports, if available
-                    for (int i = 0; i < objEndPoints.Length; i++)
-                    {
-                        if (objEndPoints[i].Port == port)
-                        {
-                            port++;
-                            if (port > 65534)
-                            {
-                                Console.WriteLine("Failed to find open port..");
-                                isAvailable = false;
-                                return;
-                            }
-                        }
-                    }
-
-                    Console.WriteLine($"Found available port: {port}");
-
-                    if (isAvailable == false)
+                    if (webglServerProcesses.ContainsKey(port))
                     {
                         Console.WriteLine(
-                            $"failed to open port {port} (should be open already, or something else is using it?)");
+                            $"Error> Should not happen - this port is already in dictionary! port: {port}");
                     }
-                    else
+                    else // keep reference to this process on this port
                     {
-                        // take process id from unity, if have it (then webserver closes automatically when unity is closed)
-                        var proc = ProcessHandler.Get(proj.Path);
-                        int pid = proc == null ? -1 : proc.Id;
-                        var param = $"\"{webExe}\" \"{buildPath}\" {port}{(pid == -1 ? "" : $" {pid}")}"; // server exe path, build folder and port
-
-                        var webglServerProcess = Tools.LaunchExe(monoExe, param);
-
-                        if (webglServerProcesses.ContainsKey(port))
-                        {
-                            Console.WriteLine(
-                                $"Error> Should not happen - this port is already in dictionary! port: {port}");
-                        }
-                        else // keep reference to this process on this port
-                        {
-                            // TODO how to remove process once its closed? (or unlikely to have many processes in total? can also remove during check, if process already null)
-                            webglServerProcesses.Add(port, webglServerProcess);
-                            Console.WriteLine($"Added port {port}");
-                        }
-
-                        Tools.OpenURL($"http://localhost:{port}");
+                        // TODO how to remove process once its closed? (or unlikely to have many processes in total? can also remove during check, if process already null)
+                        webglServerProcesses.Add(port, webglServerProcess);
+                        Console.WriteLine($"Added port {port}");
                     }
-                    // -----------------------------------------------------------
 
+                    OpenURL($"http://localhost:{port}");
                 }
+                // -----------------------------------------------------------
             }
             else
             {
@@ -1966,7 +1942,7 @@ public static class UnityLauncherProTools
                     int pid = proc == null ? -1 : proc.Id;
                     var param = $"\"{webExe}\" \"{buildPath}\" {port}{(pid == -1 ? "" : $" {pid}")}"; // server exe path, build folder and port
 
-                    var webglServerProcess = Tools.LaunchExe(monoExe, param);
+                    var webglServerProcess = LaunchExe(monoExe, param);
 
                     if (webglServerProcess == null)
                     {
@@ -1985,7 +1961,7 @@ public static class UnityLauncherProTools
                         Console.WriteLine($"Added port {port}");
                     }
 
-                    Tools.OpenURL($"http://localhost:{port}");
+                    OpenURL($"http://localhost:{port}");
                 }
                 // -----------------------------------------------------------
 
@@ -2206,10 +2182,7 @@ public static class UnityLauncherProTools
             modalWindow.ShowDialog();
             var results = modalWindow.DialogResult.HasValue && modalWindow.DialogResult.Value;
 
-            if (results == true)
-            {
-            }
-            else
+            if (results)
             {
             }
         }
@@ -2237,7 +2210,7 @@ public static class UnityLauncherProTools
         internal static void OpenCustomAssetPath()
         {
             // check if custom asset folder is used, then open both *since older versions might have assets in old folder
-            string keyPath = @"SOFTWARE\Unity Technologies\Unity Editor 5.x";
+            const string keyPath = @"SOFTWARE\Unity Technologies\Unity Editor 5.x";
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey(keyPath))
             {
                 if (key == null) return;
@@ -2247,9 +2220,9 @@ public static class UnityLauncherProTools
                     // Check if the subkey matches the desired pattern
                     if (Regex.IsMatch(valueName, @"AssetStoreCacheRootPath_h\d+") == false) continue;
 
-                    string customAssetPath = "";
                     var valueKind = key.GetValueKind(valueName);
 
+                    string customAssetPath;
                     if (valueKind == RegistryValueKind.Binary)
                     {
                         byte[] bytes = (byte[])key.GetValue(valueName);
@@ -2262,7 +2235,7 @@ public static class UnityLauncherProTools
 
                     if (string.IsNullOrEmpty(customAssetPath) == false && Directory.Exists(customAssetPath))
                     {
-                        Tools.LaunchExplorer(Path.Combine(customAssetPath, "Asset Store-5.x"));
+                        LaunchExplorer(Path.Combine(customAssetPath, "Asset Store-5.x"));
                     }
                 }
             }

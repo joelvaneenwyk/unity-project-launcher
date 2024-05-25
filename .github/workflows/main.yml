@@ -26,7 +26,7 @@ jobs:
 
         run: |
           # cancel early, if not build commit
-          $strVal ='${{ github.event.commits[0].message }}'
+          $strVal="$Env:COMMIT_MESSAGE"
           # Convert commit message to a single line if multiline
           $singleLineStrVal = $strVal -replace "`r`n", " " -replace "`n", " "
           if($singleLineStrVal -match '#GITBUILD')
@@ -37,6 +37,9 @@ jobs:
                 exit(1)
           }
           Install-Module 7Zip4PowerShell -Force -Verbose
+        env:
+          COMMIT_MESSAGE: "${{ github.event.commits[0].message }}"
+
       - uses: actions/checkout@v2
       - name: Restore NuGet packages
         run: nuget restore UnityLauncherPro.sln

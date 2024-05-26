@@ -16,8 +16,6 @@ using System.Runtime.CompilerServices;
 
 namespace UnityLauncherPro.Properties
 {
-
-
     [CompilerGenerated()]
     [GeneratedCode("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.4.0.0")]
     internal sealed partial class Settings : ApplicationSettingsBase
